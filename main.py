@@ -1,5 +1,14 @@
+"""
+- Terminar la gestión de contraseñas.
+- hasheo de contraseñas.
+- almacenar los datos (json).
+- cifrado y autenticado.
+Cada usuario con su key, que servirá para extraer y descifrar sus datos del json master
+"""
+
 import os
 import random
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 class BankUser:
     def __init__(self, doc_id, nombre, apellidos, pwd, direccion, credito):
@@ -9,9 +18,10 @@ class BankUser:
         self.direccion = direccion
         self.credito = credito
 
+        # Investigar si los salt pueden coincidir con urandom()
         self.salt = os.urandom(16)
         self.pwd_hash = hash(pwd)  # Habrá que usar un hash de la librería Scrypt.
-        generated_bank_num = str(random.randint(0, 9999999999999999999999))
+        generated_bank_num = str(random.randint(1000000000000000000000, 9999999999999999999999))
         # Verificar que el número del banco que se va a generar no existe.
         self.bank_num = "ES" + generated_bank_num
 
@@ -49,6 +59,7 @@ class BankInstance:
         pwd_loop = True
         while pwd_loop:
             print("Escribe tu contraseña: ")
+            # Revisar el formato de la contraseña.
             user_pwd = input("")
             print("Repite la contraseña: ")
             user_pwd_repeat = input("")
@@ -56,11 +67,24 @@ class BankInstance:
                 print("Las contraseñas no coinciden.")
             else:
                 print("Usuario registrado con éxito.")
+
                 pwd_loop = False
 
         bank_user = BankUser(doc_id_user, nombre_user, apellido_user, user_pwd,
                              direccion_user, credito_user)
+        # Autenticar usuario.
+        kdf = Scrypt(
+            salt=bank_user.salt,
+            length=32,
+            n=2 ** 14,
+            r=8,
+            p=1,
+        )
+
+        key = kdf.derive(user_pwd)
+
         self.users.append(bank_user)
+        return bank_user
 
 
     def log_in(self):
@@ -79,18 +103,20 @@ class BankInstance:
         pwd_loop = True
         while pwd_loop:
             login_pwd = input("Contraseña: \n")
+            # esto ta mal >:V, usar try: kdf.verify() para ello (manejando excepciones)
             if hash(login_pwd) == user_to_login.pwd_hash:   # Sustituir hash()
                 print("¡Bienvenido de vuelta!")
                 pwd_loop = False
             else:
                 print("¡Contraseña incorrecta!")
+        return user_to_login
 
 
     def bank_loop(self):
-        account_loop = True
-        logued_in_loop = True
+        user_bank = None
+        bank_loop = True
 
-        while account_loop:
+        while bank_loop:
             print("¿Qué quieres hacer?\n"
                   "1_Registrar una cuenta\n"
                   "2_Entrar a una cuenta\n"
@@ -98,19 +124,45 @@ class BankInstance:
             user_input = input("")
 
             if user_input == "1":
-                self.register()
+                user_bank = self.register()
+                self.user_space_loop(user_bank)
             elif user_input == "2":
-                self.log_in()
-            elif user_input == "3":
-                account_loop = False
-                logued_in_loop = False
+                user_bank = self.log_in()
+                self.user_space_loop(user_bank)
 
-        """
-        while logued_in_loop:
-            print("¿Qué quieres hacer con tu dinero?\n"
-                  "Crédito: {}".format(credito))
-        """
+            elif user_input == "3":
+                bank_loop = False
+
+
         print("¡Hasta la próxima!")
+
+    def user_space_loop(self, user):
+        user_space_loop = True
+
+        while user_space_loop:
+            print("¿Qué quieres hacer?\n"
+                  "1_Gestionar mi dinero\n"
+                  "2_Revisar tus datos\n"
+                  "3_Sacar certificado\n"
+                  "4_Cerrar la sesión")
+            user_input = input("")
+
+            if user_input == "1":
+                # Gestionar dinero
+                print("Gestionar dinero")
+            elif user_input == "2":
+                # Revisar datos.
+                print("Revisar datos")
+            elif user_input == "3":
+                # Sacar certificado.
+                print("Sacar certificado")
+            elif user_input == "4":
+                # Cerrar la sesión.
+                user_space_loop = False
+            else:
+                print("Opción invalida.")
+
+
 
 
 banko = BankInstance()
@@ -133,6 +185,7 @@ kdf = Scrypt(
     r=8,
     p=1,
 )
+
 key = kdf.derive(b"my great password")  <-- NO ESCRIBIR CONTRASEÑAS EN EL CÓDIGO
 # Logueo
 kdf = Scrypt(
