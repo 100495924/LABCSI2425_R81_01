@@ -160,7 +160,35 @@ class BankInstance:
                 # Cerrar la sesión.
                 user_space_loop = False
             else:
-                print("Opción invalida.")
+                print("Opción inválida.")
+
+    def money_loop(self, user):
+        money_loop = True
+
+        while money_loop:
+            print("Crédito: {}".format(user.credito))
+            print("¿Qué quieres hacer con tú dinero?\n"
+                  "1_Sacar dinero de mi cuenta\n"
+                  "2_Meter dinero a mi cuenta\n"
+                  "3_Atrás")
+            user_input = input("")
+
+            if user_input == "1":
+                dinero_a_sacar = int(input("¿Cuánto dinero quieres sacar? "))
+                if user.credito - dinero_a_sacar >= 0:
+                    print("Has sacado {} €".format(dinero_a_sacar))
+                    user.credito -= dinero_a_sacar
+                else:
+                    print("No puedes sacar más dinero del que tienes.")
+            elif user_input == "2":
+                dinero_a_meter = int(input("¿Cuánto dinero quieres meter?"))
+                print("Has metido {} €".format(dinero_a_meter))
+                user.credito += dinero_a_meter
+            elif user_input == "3":
+                money_loop = False
+            else:
+                print("Opción inválida")
+
 
 
 
