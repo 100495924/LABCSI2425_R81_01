@@ -1,0 +1,13 @@
+[
+    {
+        "BankNum": "ES6243380385791962903255",
+        "DocID": "00000000T",
+        "Nombre": "1",
+        "Apellidos": "1",
+        "Email": "a@a.a",
+        "Direccion": "Calle 1, 1, 1-1, 1, 1, 1, 1",
+        "Credito": 11,
+        "Pwd": -7434532052294145433,
+        "Salt": "duU05lx0fJUPty5Ak0qqgg=="
+    }
+]
