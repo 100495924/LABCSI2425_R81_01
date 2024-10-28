@@ -11,9 +11,26 @@ import random
 import re
 import json
 import base64
+from email.errors import InvalidDateDefect
 
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+MASTER_PWD = b"Patata_96"
+MASTER_SALT = b';\x16\xdeW\x19~\xcc\x96\x7f\xa2&\x9d\x1a/%:'
+kdf = Scrypt(
+    salt=MASTER_SALT,
+    length=32,
+    n=2**14,
+    r=8,
+    p=1,
+)
+MASTER_KEY = kdf.derive(MASTER_PWD)
+
+
+class InvalidDataError(Exception):
+    pass
 
 
 class BankInstance:
@@ -302,6 +319,68 @@ class BankInstance:
 
         return user_to_login
 
+    def decrypt_data(self, user:dict, data_key:str):
+        """ Función para desencriptar un dato del usuario"""
+        data_nonce_key = data_key + "Nonce"
+        try:
+            if data_key not in user.keys():
+                raise InvalidDataError("The data_key is not in the user")
+        except InvalidDataError:
+            raise
+
+        # Primero hay que desencriptar la clave del usuario.
+        master_aesgcm = AESGCM(MASTER_KEY)
+        user_key_nonce = base64.b64decode(user["UserKeyNonce"])
+        user_key_ciphertext = base64.b64decode(user["UserKey"])
+        user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
+
+        # Ya podemos desencriptar el dato del usuario que necesitamos.
+        user_aesgcm = AESGCM(user_key)
+        data_nonce = base64.b64decode(user[data_nonce_key])
+        data_ciphertext = base64.b64decode(user[data_key])
+        data = user_aesgcm.decrypt(data_nonce, data_ciphertext, None)
+
+        # Volvemos a encriptar el dato con un nuevo nonce.
+        new_data_nonce = os.urandom(12)
+        new_data_ciphertext = user_aesgcm.encrypt(new_data_nonce, data, None)
+        user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
+        user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
+
+        return data
+
+
+
+    def modify_cipher_data(self, user:dict, data_key:str, new_data_val):
+        """Encriptar el dato nuevo con un nuevo nonce y sustituir los
+        valores respectivos del user"""
+        """ Función para modificar un dato cifrado del usuario."""
+        data_nonce_key = data_key + "Nonce"
+        try:
+            if data_key not in user.keys():
+                raise InvalidDataError("The data_key is not in the user")
+        except InvalidDataError:
+            raise
+
+        # Primero hay que desencriptar la clave del usuario.
+        master_aesgcm = AESGCM(MASTER_KEY)
+        user_key_nonce = base64.b64decode(user["UserKeyNonce"])
+        user_key_ciphertext = base64.b64decode(user["UserKey"])
+        user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
+
+        # Generamos nuevo nonce.
+        new_data_nonce = os.urandom(12)
+        user_aesgcm = AESGCM(user_key)
+
+        # Encriptamos el dato modificado.
+        new_data_ciphertext = user_aesgcm.encrypt(new_data_nonce, (str(new_data_val)).encode(encoding='utf-8'), None)
+
+        #Cambiamos los valores en el usuario.
+        user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
+        user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
+
+
+
+
     # FUNCIONES RELATIVAS AL USER_SPACE_LOOP
 
     def user_space_loop(self, user: dict) -> None:
@@ -346,7 +425,9 @@ class BankInstance:
         money_loop = True
 
         while money_loop:
-            print(f"\nCrédito actual: {user['Credito']}€")
+            # Desencriptamos la información referente al crédito del usuario.
+            user_credito = int(self.decrypt_data(user, "Credito"))
+            print(f"\nCrédito actual: {user_credito}€")
             print("¿Qué quieres hacer con tu dinero?\n"
                   "1_Sacar dinero de mi cuenta\n"
                   "2_Meter dinero a mi cuenta\n"
@@ -354,15 +435,15 @@ class BankInstance:
             user_input = input("")
 
             if user_input == "1":
-                self.sacar_dinero(user)
+                self.sacar_dinero(user, user_credito)
             elif user_input == "2":
-                self.meter_dinero(user)
+                self.meter_dinero(user, user_credito)
             elif user_input == "3":
                 money_loop = False
             else:
                 print("(!) Opción inválida")
 
-    def sacar_dinero(self, user: dict) -> None:
+    def sacar_dinero(self, user: dict, credito:int) -> None:
         sacar_loop = True
         while sacar_loop:
             dinero_a_sacar = input("\n¿Cuánto dinero quieres sacar? \n(para cancelar la operación, presiona enter)\n")
@@ -371,9 +452,11 @@ class BankInstance:
             else:
                 try:
                     dinero_a_sacar = int(dinero_a_sacar)
-                    if user["Credito"] - dinero_a_sacar >= 0:
-                        user["Credito"] -= dinero_a_sacar
+                    if credito - dinero_a_sacar >= 0:
+                        credito -= dinero_a_sacar
+                        self.modify_cipher_data(user, "Credito", str(credito))
                         self.update_user_json(user, ["Credito"])
+                        self.update_user_json(user, ["CreditoNonce"])
                         print(f"Has sacado {dinero_a_sacar}€")
                         sacar_loop = False
                     else:
@@ -381,7 +464,7 @@ class BankInstance:
                 except ValueError:
                     print("(!) No se ha introducido un número")
 
-    def meter_dinero(self, user: dict) -> None:
+    def meter_dinero(self, user: dict, credito:int) -> None:
         meter_loop = True
         while meter_loop:
             dinero_a_meter = input("\n¿Cuánto dinero quieres meter? \n(para cancelar la operación, presiona enter)\n")
@@ -390,8 +473,10 @@ class BankInstance:
             else:
                 try:
                     dinero_a_meter = int(dinero_a_meter)
-                    user["Credito"] += dinero_a_meter
+                    credito += dinero_a_meter
+                    self.modify_cipher_data(user, "Credito", credito)
                     self.update_user_json(user, ["Credito"])
+                    self.update_user_json(user, ["CreditoNonce"])
                     print(f"Has metido {dinero_a_meter}€")
                     meter_loop = False
                 except ValueError:
@@ -439,16 +524,46 @@ class BankInstance:
         pwd_kdf_binary = kdf.derive(pwd_binary)  # clave derivada en binario
         pwd_kdf = base64.b64encode(pwd_kdf_binary).decode('utf-8')  # string en base64 que puede ser almacenado
 
+        # cifrar los datos con AES_GCM.
+        datos_a_cifrar = [email, direccion, str(credito)]
+        nonce_array = []
+        datos_cifrados = []
+
+        # generamos una clave para el usuario.
+        user_key = AESGCM.generate_key(bit_length=128)
+
+        aesgcm = AESGCM(user_key)
+
+        for i in range(len(datos_a_cifrar)):
+            # Pasamos el dato a binario.
+            #datos_a_cifrar[i] = base64.b64decode(datos_a_cifrar[i])
+            datos_a_cifrar[i] = (datos_a_cifrar[i]).encode(encoding='utf-8')
+            # Generamos un nonce para cada dato.
+            nonce_array.append(os.urandom(12))
+            # Encriptamos.
+            ciphertext = aesgcm.encrypt(nonce_array[i], datos_a_cifrar[i], None)
+            datos_cifrados.append(ciphertext)
+
+        # Ciframos la clave de usuario con la MASTER_KEY.
+        user_key_nonce = os.urandom(12)
+        master_aesgcm = AESGCM(MASTER_KEY)
+        user_key_ciphertext = master_aesgcm.encrypt(user_key_nonce, user_key, None)
+
         user_dict = {
             "BankNum": bank_num,
             "DocID": doc_id,
             "Nombre": nombre,
             "Apellidos": apellidos,
-            "Email": email,
-            "Direccion": direccion,
-            "Credito": credito,
+            "EmailNonce": base64.b64encode(nonce_array[0]).decode('utf-8'),
+            "Email": base64.b64encode(datos_cifrados[0]).decode('utf-8'),
+            "DireccionNonce": base64.b64encode(nonce_array[1]).decode('utf-8'),
+            "Direccion": base64.b64encode(datos_cifrados[1]).decode('utf-8'),
+            "CreditoNonce": base64.b64encode(nonce_array[2]).decode('utf-8'),
+            "Credito": base64.b64encode(datos_cifrados[2]).decode('utf-8'),
             "Pwd": pwd_kdf,
-            "Salt": salt
+            "Salt": salt,
+            "UserKeyNonce": base64.b64encode(user_key_nonce).decode('utf-8'),
+            "UserKey": base64.b64encode(user_key_ciphertext).decode('utf-8')
         }
 
         return user_dict
