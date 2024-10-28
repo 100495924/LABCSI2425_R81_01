@@ -11,6 +11,8 @@ import random
 import re
 import json
 import base64
+
+from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 
@@ -41,8 +43,11 @@ class BankInstance:
                     self.user_space_loop(user)
             elif user_input == "2":
                 user = self.log_in()
+                if user == -1:
+                    print("Se hicieron demasiados intentos incorrectos. Inténtalo de nuevo más tarde.")
+                    return
                 # Si el usuario le da a enter, sale del proceso de log in
-                if user is not None:
+                elif user != 0:
                     self.user_space_loop(user)
             elif user_input == "3":
                 # Salir
@@ -238,18 +243,22 @@ class BankInstance:
 
         return ""
 
-    def log_in(self) -> dict | None:
+    def log_in(self) -> dict | int:
+        """Devuelve un diccionario con los datos del usuario si se loguea con éxito, 0 si se cancela la operación,
+        -1 si se termina el número de intentos para introducir una contraseña"""
         user_to_login = None
 
         print("\nLogueando\n"
-              "Introduce tus datos de inicio de sesión"
+              "Introduce tus datos de inicio de sesión\n"
               "(para ir atrás, presiona enter en cualquier momento)\n")
 
         doc_id_loop = True
         while doc_id_loop:
-            login_doc_id = input("\nDocumento de Identidad: \n")
+            login_doc_id = input("Documento de Identidad: \n")
+            # El usuario presiona enter
             if login_doc_id == "":
-                return None
+                return 0
+            # Se chequea si existe algún usuario registrado con ese documento de identidad
             user_to_login = self.search_user_json("DocID", login_doc_id)
             if user_to_login is None:
                 print("(!) ¡Cuenta no encontrada!")
@@ -257,16 +266,40 @@ class BankInstance:
                 doc_id_loop = False
 
         pwd_loop = True
-        while pwd_loop:
+        num_intentos = 3
+        while pwd_loop and num_intentos > 0:
             login_pwd = input("\nContraseña: \n")
+            # El usuario presiona enter
             if login_pwd == "":
-                return None
-            # esto ta mal >:V, usar try: kdf.verify() para ello (manejando excepciones)
-            if hash(login_pwd) == user_to_login["Contraseña"]:  # Sustituir hash()
+                return 0
+
+            # Se verifica que la contraseña coincide
+            # Para ello, usamos la salt almacenada en el json asociada a ese usuario
+            kdf = Scrypt(
+                salt=base64.b64decode(user_to_login["Salt"]),
+                length=32,
+                n=2 ** 14,
+                r=8,
+                p=1,
+            )
+            # Coincide
+            try:
+                kdf.verify(login_pwd.encode(), base64.b64decode(user_to_login["Pwd"]))
                 print("¡Bienvenido de vuelta!")
                 pwd_loop = False
-            else:
-                print("¡Contraseña incorrecta!")
+            # No coincide
+            # Al alcanzar el máximo número de intentos, se finaliza la ejecución de la app
+            except InvalidKey:
+                num_intentos -= 1
+                if num_intentos > 1:
+                    print(f"(!) ¡Contraseña incorrecta! Te quedan {num_intentos} intentos")
+                elif num_intentos == 1:
+                    print(f"(!) ¡Contraseña incorrecta! Te queda {num_intentos} intento")
+
+        # Intentos agotados
+        if num_intentos == 0:
+            return -1
+
         return user_to_login
 
     # FUNCIONES RELATIVAS AL USER_SPACE_LOOP
@@ -314,7 +347,7 @@ class BankInstance:
 
         while money_loop:
             print(f"\nCrédito actual: {user['Credito']}€")
-            print("¿Qué quieres hacer con tú dinero?\n"
+            print("¿Qué quieres hacer con tu dinero?\n"
                   "1_Sacar dinero de mi cuenta\n"
                   "2_Meter dinero a mi cuenta\n"
                   "3_Atrás")
@@ -369,7 +402,7 @@ class BankInstance:
 
     # FUNCIONES RELATIVAS AL JSON
 
-    def generate_user_dict(self, doc_id, nombre, apellidos, email, direccion, pwd, credito) -> dict:
+    def generate_user_dict(self, doc_id, nombre, apellidos, email, direccion, pwd: str, credito) -> dict:
         """Introduce los datos de registro de cuenta en un diccionario, la estructura de datos más adecuada para
         más adelante trabajar con archivos json, así como otros datos generados automáticamente"""
 
@@ -378,11 +411,14 @@ class BankInstance:
         while bank_num_loop:
             generated_bank_num = str(random.randint(1000000000000000000000, 9999999999999999999999))
             bank_num = "ES" + generated_bank_num
-            # Verificar que el número del banco que se va a generar no existe.
+            # Verificar que el número del banco que se quiere asignar no existe en ningún otro usuario
             if self.search_user_json("BankNum", bank_num) is None:
                 bank_num_loop = False
 
-        # El sistema genera un salt único para poder almacenar la contraseña en forma de hash y no en claro
+        # No podemos almacenar la contraseña del usuario en claro
+        # Usaremos una key derivation function en su lugar
+
+        # El sistema genera un salt único
         salt_loop = True
         while salt_loop:
             salt_binary = os.urandom(16)  # type = bytes
@@ -391,22 +427,17 @@ class BankInstance:
             if self.search_user_json("Salt", salt) is None:
                 salt_loop = False
 
-        # Para volver a transformarlo a binario
-        # salt_binary = base64.b64decode(token)
-
-        # Autenticar usuario.
-        # kdf = Scrypt(
-        #     salt=salt,
-        #     length=32,
-        #     n=2 ** 14,
-        #     r=8,
-        #     p=1,
-        # )
-        #
-        # key = kdf.derive(user_pwd)
-
-        # (Supuestamente) recibirá como input el salt y la key
-        pwd_hash = hash(pwd)  # Habrá que usar un hash de la librería Scrypt.
+        # Se genera la clave derivada de la contraseña usando el salt único del usuario
+        kdf = Scrypt(
+            salt=salt_binary,
+            length=32,
+            n=2 ** 14,
+            r=8,
+            p=1,
+        )
+        pwd_binary = pwd.encode()  # contraseña en claro en binario
+        pwd_kdf_binary = kdf.derive(pwd_binary)  # clave derivada en binario
+        pwd_kdf = base64.b64encode(pwd_kdf_binary).decode('utf-8')  # string en base64 que puede ser almacenado
 
         user_dict = {
             "BankNum": bank_num,
@@ -416,7 +447,7 @@ class BankInstance:
             "Email": email,
             "Direccion": direccion,
             "Credito": credito,
-            "Pwd": pwd_hash,
+            "Pwd": pwd_kdf,
             "Salt": salt
         }
 
