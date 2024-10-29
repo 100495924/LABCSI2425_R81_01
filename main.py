@@ -197,16 +197,11 @@ class BankInstance:
         dir_piso_puerta_loop = True
         while dir_piso_puerta_loop:
             dir_piso = input("\t- Piso (si aplica): ")
-            # El piso debe ser un número
-            try:
-                int(dir_piso)
-                dir_puerta = input("\t- Puerta (si aplica): ")
-                if (dir_piso != "" and dir_puerta != "") or (dir_piso == "" and dir_puerta == ""):
-                    dir_piso_puerta_loop = False
-                else:
-                    print("(!) Los campos Piso y Puerta deben estar ambos rellenos o ambos vacíos")
-            except ValueError:
-                print("(!) No se ha introducido un número")
+            dir_puerta = input("\t- Puerta (si aplica): ")
+            if (dir_piso != "" and dir_puerta != "") or (dir_piso == "" and dir_puerta == ""):
+                dir_piso_puerta_loop = False
+            else:
+                print("(!) Los campos Piso y Puerta deben estar ambos rellenos o ambos vacíos")
 
         return dir_piso, dir_puerta
 
@@ -223,11 +218,11 @@ class BankInstance:
             if output_validate_pwd == "":
                 user_pwd_repeat = input("Repite la contraseña:\n")
                 if user_pwd != user_pwd_repeat:
-                    print("(!) Las contraseñas no coinciden.\n")
+                    print("(!) Las contraseñas no coinciden")
                 else:
                     pwd_loop = False
             elif output_validate_pwd == "length":
-                print("(!) Contraseña inválida. Debe tener una longitud mínima de 12 caracteres\n")
+                print("(!) Contraseña inválida. Debe tener una longitud mínima de 12 caracteres")
             else:
                 print("(!) Contraseña inválida. No contiene al menos 1 " + output_validate_pwd + "\n")
 
@@ -348,7 +343,6 @@ class BankInstance:
                   "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
             exit()
 
-
         # Volvemos a encriptar el dato con un nuevo nonce.
         new_data_nonce = os.urandom(12)
         try:
@@ -404,8 +398,7 @@ class BankInstance:
                   "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
             exit()
 
-
-        #Cambiamos los valores en el usuario.
+        # Cambiamos los valores en el usuario.
         user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
 
@@ -606,8 +599,6 @@ class BankInstance:
                            f"{dir_provincia}, {dir_pais}")
         self.modify_cipher_data(user, "Direccion", nuevo_valor)
         print("\n¡Dirección modificada con éxito!")
-
-        # Aa0@aaaaaaaaaaaaa Aa0@aaaaaaaaaaaab
 
     def modificar_contraseña(self, user: dict):
         # Pedirle al usuario su contraseña actual
