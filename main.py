@@ -43,7 +43,7 @@ class BankInstance:
         """Menú inicial, relativo a la creación y acceso de cuentas"""
         bank_loop = True
 
-        print("*** ¡BIENVENIDO/A AL UC3M BANK! ***")  # qué nombre le ponemos? jaja (otras ideas: "Banko Moderno")
+        print("*** ¡BIENVENIDO/A AL BANKO MODERNO! ***")
         print("Fundado por Adrian y María en 2024")
 
         while bank_loop:
@@ -61,7 +61,7 @@ class BankInstance:
             elif user_input == "2":
                 user = self.log_in()
                 if user == -1:
-                    print("Se hicieron demasiados intentos incorrectos. Inténtalo de nuevo más tarde.")
+                    print("(!) Se hicieron demasiados intentos incorrectos. Inténtalo de nuevo más tarde.")
                     return
                 # Si el usuario le da a enter, sale del proceso de log in
                 elif user != 0:
@@ -104,7 +104,7 @@ class BankInstance:
             direccion_user = (f"Calle {dir_calle}, {dir_numero}, {dir_codigo_postal}, {dir_localidad}, "
                               f"{dir_provincia}, {dir_pais}")
 
-        user_pwd = self.validate_pwd()
+        user_pwd = self.validate_pwd("\nEscribe tu contraseña: ")
         credito_user = int(self.validate_campo_obligatorio("\nInserta tu saldo inicial:\n", True))
 
         # Se genera un diccionario a partir de los datos introducidos
@@ -114,7 +114,7 @@ class BankInstance:
         self.create_user_json(user)
 
         print("\n** ¡Usuario registrado con éxito! **")
-        print("Número de cuenta asignado:", user["BankNum"])  # no sé si quitar esto
+        print("Número de cuenta asignado:", user["BankNum"])
 
         return user
 
@@ -184,11 +184,11 @@ class BankInstance:
     def validate_email(self) -> str:
         email_loop = True
         while email_loop:
-            email_user = input("\nCorreo electrónico:\n")
+            email_user = input("\nEmail:\n")
             if email_user == "":
                 print("(!) Campo obligatorio")
             elif not self.check_regex_email(email_user):
-                print("(!) Correo electrónico inválido, debe seguir el formato nombre@dominio.net")
+                print("(!) Email electrónico inválido, debe seguir el formato nombre@dominio.net")
             else:
                 email_loop = False
         return email_user
@@ -215,10 +215,10 @@ class BankInstance:
 
         return dir_piso, dir_puerta
 
-    def validate_pwd(self) -> str:
+    def validate_pwd(self, msg_print: str) -> str:
         pwd_loop = True
         while pwd_loop:
-            print("\nEscribe tu contraseña: ")
+            print(msg_print)
             print("Debe contener al menos 12 caracteres, incluyendo:")
             print("\t- 1 mayúscula\n \t- 1 minúscula\n \t- 1 número\n \t- 1 caracter especial")
 
@@ -319,7 +319,7 @@ class BankInstance:
 
         return user_to_login
 
-    def decrypt_data(self, user:dict, data_key:str):
+    def decrypt_data(self, user: dict, data_key: str):
         """ Función para desencriptar un dato del usuario"""
         data_nonce_key = data_key + "Nonce"
         try:
@@ -347,14 +347,11 @@ class BankInstance:
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
 
         # Actualizamos los valores del json.
-        self.update_user_json(user, [data_key])
-        self.update_user_json(user, [data_nonce_key])
+        self.update_user_json(user, [data_key, data_nonce_key])
 
         return data
 
-
-
-    def modify_cipher_data(self, user:dict, data_key:str, new_data_val):
+    def modify_cipher_data(self, user: dict, data_key: str, new_data_val):
         """Encriptar el dato nuevo con un nuevo nonce y sustituir los
         valores respectivos del user"""
         """ Función para modificar un dato cifrado del usuario."""
@@ -383,11 +380,7 @@ class BankInstance:
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
 
         # Actualizamos los valores del json.
-        self.update_user_json(user, [data_key])
-        self.update_user_json(user, [data_nonce_key])
-
-
-
+        self.update_user_json(user, [data_key, data_nonce_key])
 
     # FUNCIONES RELATIVAS AL USER_SPACE_LOOP
 
@@ -408,7 +401,10 @@ class BankInstance:
                 self.money_loop(user)
             elif user_input == "2":
                 print("\nRevisar datos")
-                self.revisar_datos(user)
+                revisar_out = self.revisar_datos(user)
+                # Se introdujo la contraseña incorrecta demasiadas veces, se cierra la sesión para proteger la cuenta
+                if revisar_out == -1:
+                    user_space_loop = False
             elif user_input == "3":
                 print("\nSacar certificado (futura funcionalidad)")
             elif user_input == "4":
@@ -451,7 +447,7 @@ class BankInstance:
             else:
                 print("(!) Opción inválida")
 
-    def sacar_dinero(self, user: dict, credito:int) -> None:
+    def sacar_dinero(self, user: dict, credito: int) -> None:
         sacar_loop = True
         while sacar_loop:
             dinero_a_sacar = input("\n¿Cuánto dinero quieres sacar? \n(para cancelar la operación, presiona enter)\n")
@@ -470,7 +466,7 @@ class BankInstance:
                 except ValueError:
                     print("(!) No se ha introducido un número")
 
-    def meter_dinero(self, user: dict, credito:int) -> None:
+    def meter_dinero(self, user: dict, credito: int) -> None:
         meter_loop = True
         while meter_loop:
             dinero_a_meter = input("\n¿Cuánto dinero quieres meter? \n(para cancelar la operación, presiona enter)\n")
@@ -492,11 +488,11 @@ class BankInstance:
             user_email = self.decrypt_data(user, "Email").decode('utf-8')
             user_direccion = self.decrypt_data(user, "Direccion").decode('utf-8')
             user_credito = self.decrypt_data(user, "Credito").decode('utf-8')
-            print("Estos son los datos que guardamos de ti:\n"
-                  f"Número de cuenta*: {user["BankNum"]}\n"
-                  f"DNI/NIE*: {user["DocID"]}\n"
-                  f"Nombre: {user["Nombre"]}\n"
-                  f"Apellidos: {user["Apellidos"]}\n"
+            print("\nEstos son los datos que guardamos de ti:\n"
+                  f"Número de cuenta*: {user['BankNum']}\n"
+                  f"DNI/NIE*: {user['DocID']}\n"
+                  f"Nombre: {user['Nombre']}\n"
+                  f"Apellidos: {user['Apellidos']}\n"
                   f"Email: {user_email}\n"
                   f"Dirección: {user_direccion}\n"
                   f"Credito*: {user_credito}€\n"
@@ -507,68 +503,143 @@ class BankInstance:
             if dato_a_modificar == "":
                 revisar_datos_loop = False
             elif dato_a_modificar.lower() == "nombre":
-                modificar_nombre_loop = True
-                while modificar_nombre_loop:
-                    nuevo_valor = input("\nInserta el nuevo valor para Nombre: \n(para cancelar la operación, presiona enter)\n")
-                    if nuevo_valor == "":
-                        modificar_nombre_loop = False
-                    else:
-                        user["Nombre"] = nuevo_valor
-                        self.update_user_json(user, ["Nombre"])
-                        modificar_nombre_loop = False
+                self.modificar_nombre(user)
             elif dato_a_modificar.lower() == "apellidos":
-                modificar_apellido_loop = True
-                while modificar_apellido_loop:
-                    nuevo_valor = input(
-                        "\nInserta el nuevo valor para Apellidos: \n(para cancelar la operación, presiona enter)\n")
-                    if nuevo_valor == "":
-                        modificar_apellido_loop = False
-                    else:
-                        user["Apellidos"] = nuevo_valor
-                        self.update_user_json(user, ["Apellidos"])
-                        modificar_apellido_loop = False
+                self.modificar_apellidos(user)
             elif dato_a_modificar.lower() == "email":
-                modificar_email_loop = True
-                while modificar_email_loop:
-                    nuevo_valor = input(
-                        "\nInserta el nuevo valor para Email: \n(para cancelar la operación, presiona enter)\n")
-                    if nuevo_valor == "":
-                        modificar_email_loop = False
-                    elif not self.check_regex_email(nuevo_valor):
-                        print("(!) Correo electrónico inválido, debe seguir el formato nombre@dominio.net")
-                    else:
-                        self.modify_cipher_data(user, "Email", nuevo_valor)
-                        modificar_email_loop = False
-            elif dato_a_modificar.lower() == "dirección":
-                print("\nInserta el nuevo valor para Dirección: \n(para cancelar la operación, presiona enter)\n")
-                dir_calle = self.validate_campo_obligatorio("\t- Calle: ", False)
-                dir_numero = self.validate_campo_obligatorio("\t- Número: ", True)
-                dir_piso, dir_puerta = self.validate_piso_puerta()
-                dir_codigo_postal = self.validate_campo_obligatorio("\t- Código postal: ", True)
-                dir_localidad = self.validate_campo_obligatorio("\t- Localidad: ", False)
-                dir_provincia = self.validate_campo_obligatorio("\t- Provincia: ", False)
-                dir_pais = self.validate_campo_obligatorio("\t- País: ", False)
-
-                # Se construye un único string de "dirección" que contenga los datos introducidos anteriormente
-                if dir_piso != "" and dir_puerta != "":
-                    nuevo_valor = (f"Calle {dir_calle}, {dir_numero}, {dir_piso}-{dir_puerta}, "
-                                      f"{dir_codigo_postal}, {dir_localidad}, {dir_provincia}, {dir_pais}")
-                else:
-                    nuevo_valor = (f"Calle {dir_calle}, {dir_numero}, {dir_codigo_postal}, {dir_localidad}, "
-                                      f"{dir_provincia}, {dir_pais}")
-                self.modify_cipher_data(user, "Direccion", nuevo_valor)
+                self.modificar_email(user)
+            elif dato_a_modificar.lower() == "direccion":
+                self.modificar_direccion(user)
             elif dato_a_modificar.lower() == "contraseña":
-                print("Modificando contraseña.")
-                pass
+                modificar_contraseña_out = self.modificar_contraseña(user)
+                if modificar_contraseña_out == -1:
+                    return -1
             else:
                 print("(!) No se ha introducido un nombre de campo válido.")
 
-    def modificar_dato_usuario(self, user:dict, nuevo_dato_key:str, mensaje_consola:str):
-        modificar_dato_loop = True
-        while modificar_dato_loop:
-            print(mensaje_consola)
-            nuevo_valor = input()
+    def modificar_nombre(self, user: dict):
+        modificar_nombre_loop = True
+        while modificar_nombre_loop:
+            nuevo_valor = input(
+                "\nInserta el nuevo valor para Nombre: \n(para cancelar la operación, presiona enter)\n")
+            if nuevo_valor == "":
+                modificar_nombre_loop = False
+            else:
+                user["Nombre"] = nuevo_valor
+                self.update_user_json(user, ["Nombre"])
+                print("\n¡Nombre modificado con éxito!")
+                modificar_nombre_loop = False
 
+    def modificar_apellidos(self, user: dict):
+        modificar_apellido_loop = True
+        while modificar_apellido_loop:
+            nuevo_valor = input(
+                "\nInserta el nuevo valor para Apellidos: \n(para cancelar la operación, presiona enter)\n")
+            if nuevo_valor == "":
+                modificar_apellido_loop = False
+            else:
+                user["Apellidos"] = nuevo_valor
+                self.update_user_json(user, ["Apellidos"])
+                print("\n¡Apellidos modificados con éxito!")
+                modificar_apellido_loop = False
+
+    def modificar_email(self, user: dict):
+        modificar_email_loop = True
+        while modificar_email_loop:
+            nuevo_valor = input(
+                "\nInserta el nuevo valor para Email: \n(para cancelar la operación, presiona enter)\n")
+            if nuevo_valor == "":
+                modificar_email_loop = False
+            elif not self.check_regex_email(nuevo_valor):
+                print("(!) Email inválido, debe seguir el formato nombre@dominio.net")
+            else:
+                self.modify_cipher_data(user, "Email", nuevo_valor)
+                print("\n¡Email modificado con éxito!")
+                modificar_email_loop = False
+
+    def modificar_direccion(self, user: dict):
+        print("\nInserta el nuevo valor para Dirección:")
+        dir_calle = self.validate_campo_obligatorio("\t- Calle: ", False)
+        dir_numero = self.validate_campo_obligatorio("\t- Número: ", True)
+        dir_piso, dir_puerta = self.validate_piso_puerta()
+        dir_codigo_postal = self.validate_campo_obligatorio("\t- Código postal: ", True)
+        dir_localidad = self.validate_campo_obligatorio("\t- Localidad: ", False)
+        dir_provincia = self.validate_campo_obligatorio("\t- Provincia: ", False)
+        dir_pais = self.validate_campo_obligatorio("\t- País: ", False)
+
+        # Se construye un único string de "dirección" que contenga los datos introducidos anteriormente
+        if dir_piso != "" and dir_puerta != "":
+            nuevo_valor = (f"Calle {dir_calle}, {dir_numero}, {dir_piso}-{dir_puerta}, "
+                           f"{dir_codigo_postal}, {dir_localidad}, {dir_provincia}, {dir_pais}")
+        else:
+            nuevo_valor = (f"Calle {dir_calle}, {dir_numero}, {dir_codigo_postal}, {dir_localidad}, "
+                           f"{dir_provincia}, {dir_pais}")
+        self.modify_cipher_data(user, "Direccion", nuevo_valor)
+        print("\n¡Dirección modificada con éxito!")
+
+        # Aa0@aaaaaaaaaaaaa Aa0@aaaaaaaaaaaab
+
+    def modificar_contraseña(self, user: dict):
+        # Pedirle al usuario su contraseña actual
+        modificar_contraseña_loop = True
+        num_intentos = 3
+        while modificar_contraseña_loop and num_intentos > 0:
+            actual_contraseña = input("\nIntroduce tu actual contraseña:"
+                                      "\n(para cancelar la operación, presiona enter)\n")
+            if actual_contraseña == "":
+                return
+            else:
+                # Se verifica que la contraseña coincide
+                kdf_actual = Scrypt(
+                    salt=base64.b64decode(user["Salt"]),
+                    length=32,
+                    n=2 ** 14,
+                    r=8,
+                    p=1,
+                )
+                # Coincide
+                try:
+                    kdf_actual.verify(actual_contraseña.encode(), base64.b64decode(user["Pwd"]))
+                    modificar_contraseña_loop = False
+                # No coincide
+                # Al alcanzar el máximo número de intentos, se cierra sesión para proteger la cuenta
+                except InvalidKey:
+                    num_intentos -= 1
+                    if num_intentos > 1:
+                        print(f"(!) ¡Contraseña incorrecta! Te quedan {num_intentos} intentos")
+                    elif num_intentos == 1:
+                        print(f"(!) ¡Contraseña incorrecta! Te queda {num_intentos} intento")
+                    elif num_intentos == 0:
+                        print("(!) Se hicieron demasiados intentos incorrectos. Cerrando sesión.")
+                        return -1
+        # Pedirle al usuario una nueva contraseña, generar un nuevo salt y actualizar el JSON
+        nueva_contraseña = self.validate_pwd("\nEscribe tu nueva contraseña: ")
+        # Generar un nuevo salt único
+        salt_loop = True
+        while salt_loop:
+            salt_binary = os.urandom(16)  # type = bytes
+            salt = base64.b64encode(salt_binary).decode('utf-8')  # type = str
+            # Verificar que salt no existe
+            if self.search_user_json("Salt", salt) is None:
+                salt_loop = False
+
+        # Se genera la clave derivada de la contraseña usando el nuevo salt
+        kdf_nueva = Scrypt(
+            salt=salt_binary,
+            length=32,
+            n=2 ** 14,
+            r=8,
+            p=1,
+        )
+        pwd_binary = nueva_contraseña.encode()  # contraseña en claro en binario
+        pwd_kdf_binary = kdf_nueva.derive(pwd_binary)  # clave derivada en binario
+        pwd_kdf = base64.b64encode(pwd_kdf_binary).decode('utf-8')  # string en base64 que puede ser almacenado
+
+        user["Pwd"] = pwd_kdf
+        user["Salt"] = salt
+        self.update_user_json(user, ["Pwd", "Salt"])
+
+        print("\n¡Contraseña modificada con éxito!")
 
     # FUNCIONES RELATIVAS AL JSON
 
@@ -729,35 +800,3 @@ class BankInstance:
 
 banko = BankInstance()
 banko.bank_loop()
-
-"""
-Para el registro y logueo del usuario se usará Scrypt, para almacenar las 
-contraseñas de los usuarios.
-
-Código ejemplo: 
-import os
-from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
-salt = os.urandom(16)
-# Registro
-kdf = Scrypt(
-    salt=salt,
-    length=32,
-    n=2**14,
-    r=8,
-    p=1,
-)
-
-key = kdf.derive(b"my great password")  <-- NO ESCRIBIR CONTRASEÑAS EN EL CÓDIGO
-# Logueo
-kdf = Scrypt(
-    salt=salt,
-    length=32,
-    n=2**14,
-    r=8,
-    p=1,
-)
-Al verificar la contraseña, es bueno usar excepciones (try) para 
-avisar al usuario en el caso de que la contraseña que ha 
-introducido en el login no coincide con su contraseña ya registrada.
-kdf.verify(b"my great password", key)
-"""
