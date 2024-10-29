@@ -346,6 +346,10 @@ class BankInstance:
         user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
 
+        # Actualizamos los valores del json.
+        self.update_user_json(user, [data_key])
+        self.update_user_json(user, [data_nonce_key])
+
         return data
 
 
@@ -377,6 +381,10 @@ class BankInstance:
         #Cambiamos los valores en el usuario.
         user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
+
+        # Actualizamos los valores del json.
+        self.update_user_json(user, [data_key])
+        self.update_user_json(user, [data_nonce_key])
 
 
 
@@ -455,8 +463,6 @@ class BankInstance:
                     if credito - dinero_a_sacar >= 0:
                         credito -= dinero_a_sacar
                         self.modify_cipher_data(user, "Credito", str(credito))
-                        self.update_user_json(user, ["Credito"])
-                        self.update_user_json(user, ["CreditoNonce"])
                         print(f"Has sacado {dinero_a_sacar}€")
                         sacar_loop = False
                     else:
@@ -475,15 +481,94 @@ class BankInstance:
                     dinero_a_meter = int(dinero_a_meter)
                     credito += dinero_a_meter
                     self.modify_cipher_data(user, "Credito", credito)
-                    self.update_user_json(user, ["Credito"])
-                    self.update_user_json(user, ["CreditoNonce"])
                     print(f"Has metido {dinero_a_meter}€")
                     meter_loop = False
                 except ValueError:
                     print("(!) No se ha introducido un número")
 
     def revisar_datos(self, user: dict):
-        pass
+        revisar_datos_loop = True
+        while revisar_datos_loop:
+            user_email = self.decrypt_data(user, "Email").decode('utf-8')
+            user_direccion = self.decrypt_data(user, "Direccion").decode('utf-8')
+            user_credito = self.decrypt_data(user, "Credito").decode('utf-8')
+            print("Estos son los datos que guardamos de ti:\n"
+                  f"Número de cuenta*: {user["BankNum"]}\n"
+                  f"DNI/NIE*: {user["DocID"]}\n"
+                  f"Nombre: {user["Nombre"]}\n"
+                  f"Apellidos: {user["Apellidos"]}\n"
+                  f"Email: {user_email}\n"
+                  f"Dirección: {user_direccion}\n"
+                  f"Credito*: {user_credito}€\n"
+                  "Contraseña: **********\n"
+                  "NOTA: Los datos marcados con '*' no se "
+                  "podrán modificar.")
+            dato_a_modificar = input("\n¿Quieres modificar algún dato? \n(para cancelar la operación, presiona enter)\n")
+            if dato_a_modificar == "":
+                revisar_datos_loop = False
+            elif dato_a_modificar.lower() == "nombre":
+                modificar_nombre_loop = True
+                while modificar_nombre_loop:
+                    nuevo_valor = input("\nInserta el nuevo valor para Nombre: \n(para cancelar la operación, presiona enter)\n")
+                    if nuevo_valor == "":
+                        modificar_nombre_loop = False
+                    else:
+                        user["Nombre"] = nuevo_valor
+                        self.update_user_json(user, ["Nombre"])
+                        modificar_nombre_loop = False
+            elif dato_a_modificar.lower() == "apellidos":
+                modificar_apellido_loop = True
+                while modificar_apellido_loop:
+                    nuevo_valor = input(
+                        "\nInserta el nuevo valor para Apellidos: \n(para cancelar la operación, presiona enter)\n")
+                    if nuevo_valor == "":
+                        modificar_apellido_loop = False
+                    else:
+                        user["Apellidos"] = nuevo_valor
+                        self.update_user_json(user, ["Apellidos"])
+                        modificar_apellido_loop = False
+            elif dato_a_modificar.lower() == "email":
+                modificar_email_loop = True
+                while modificar_email_loop:
+                    nuevo_valor = input(
+                        "\nInserta el nuevo valor para Email: \n(para cancelar la operación, presiona enter)\n")
+                    if nuevo_valor == "":
+                        modificar_email_loop = False
+                    elif not self.check_regex_email(nuevo_valor):
+                        print("(!) Correo electrónico inválido, debe seguir el formato nombre@dominio.net")
+                    else:
+                        self.modify_cipher_data(user, "Email", nuevo_valor)
+                        modificar_email_loop = False
+            elif dato_a_modificar.lower() == "dirección":
+                print("\nInserta el nuevo valor para Dirección: \n(para cancelar la operación, presiona enter)\n")
+                dir_calle = self.validate_campo_obligatorio("\t- Calle: ", False)
+                dir_numero = self.validate_campo_obligatorio("\t- Número: ", True)
+                dir_piso, dir_puerta = self.validate_piso_puerta()
+                dir_codigo_postal = self.validate_campo_obligatorio("\t- Código postal: ", True)
+                dir_localidad = self.validate_campo_obligatorio("\t- Localidad: ", False)
+                dir_provincia = self.validate_campo_obligatorio("\t- Provincia: ", False)
+                dir_pais = self.validate_campo_obligatorio("\t- País: ", False)
+
+                # Se construye un único string de "dirección" que contenga los datos introducidos anteriormente
+                if dir_piso != "" and dir_puerta != "":
+                    nuevo_valor = (f"Calle {dir_calle}, {dir_numero}, {dir_piso}-{dir_puerta}, "
+                                      f"{dir_codigo_postal}, {dir_localidad}, {dir_provincia}, {dir_pais}")
+                else:
+                    nuevo_valor = (f"Calle {dir_calle}, {dir_numero}, {dir_codigo_postal}, {dir_localidad}, "
+                                      f"{dir_provincia}, {dir_pais}")
+                self.modify_cipher_data(user, "Direccion", nuevo_valor)
+            elif dato_a_modificar.lower() == "contraseña":
+                print("Modificando contraseña.")
+                pass
+            else:
+                print("(!) No se ha introducido un nombre de campo válido.")
+
+    def modificar_dato_usuario(self, user:dict, nuevo_dato_key:str, mensaje_consola:str):
+        modificar_dato_loop = True
+        while modificar_dato_loop:
+            print(mensaje_consola)
+            nuevo_valor = input()
+
 
     # FUNCIONES RELATIVAS AL JSON
 
