@@ -1,11 +1,3 @@
-"""
-- Terminar la gestión de contraseñas.
-- hasheo de contraseñas.
-- almacenar los datos (json).
-- cifrado y autenticado.
-Cada usuario con su key, que servirá para extraer y descifrar sus datos del json master
-"""
-
 import os
 import random
 import re
@@ -13,11 +5,13 @@ import json
 import base64
 from email.errors import InvalidDateDefect
 
+import cryptography
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-MASTER_PWD = b"Patata_96"
+################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
+MASTER_PWD = b"Adrian_100495924_Maria_100495839"
 MASTER_SALT = b';\x16\xdeW\x19~\xcc\x96\x7f\xa2&\x9d\x1a/%:'
 kdf = Scrypt(
     salt=MASTER_SALT,
@@ -27,6 +21,7 @@ kdf = Scrypt(
     p=1,
 )
 MASTER_KEY = kdf.derive(MASTER_PWD)
+###################### RECONOCEMOS LA MALA PRÁCTICA DE AQUÍ #####################################
 
 
 class InvalidDataError(Exception):
@@ -332,17 +327,37 @@ class BankInstance:
         master_aesgcm = AESGCM(MASTER_KEY)
         user_key_nonce = base64.b64decode(user["UserKeyNonce"])
         user_key_ciphertext = base64.b64decode(user["UserKey"])
-        user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
+        try:
+            user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
+        except cryptography.exceptions.InvalidTag:
+            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
+                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            exit()
+
+        # Preparamos los datos para autenticarlos.
+        datos_asociados = str(user["BankNum"] + user["DocID"]).encode(encoding='utf-8')
 
         # Ya podemos desencriptar el dato del usuario que necesitamos.
         user_aesgcm = AESGCM(user_key)
         data_nonce = base64.b64decode(user[data_nonce_key])
         data_ciphertext = base64.b64decode(user[data_key])
-        data = user_aesgcm.decrypt(data_nonce, data_ciphertext, None)
+        try:
+            data = user_aesgcm.decrypt(data_nonce, data_ciphertext, datos_asociados)
+        except cryptography.exceptions.InvalidTag:
+            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
+                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            exit()
+
 
         # Volvemos a encriptar el dato con un nuevo nonce.
         new_data_nonce = os.urandom(12)
-        new_data_ciphertext = user_aesgcm.encrypt(new_data_nonce, data, None)
+        try:
+            new_data_ciphertext = user_aesgcm.encrypt(new_data_nonce, data, datos_asociados)
+        except cryptography.exceptions.InvalidTag:
+            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
+                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            exit()
+
         user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
 
@@ -366,14 +381,29 @@ class BankInstance:
         master_aesgcm = AESGCM(MASTER_KEY)
         user_key_nonce = base64.b64decode(user["UserKeyNonce"])
         user_key_ciphertext = base64.b64decode(user["UserKey"])
-        user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
+        try:
+            user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
+        except cryptography.exceptions.InvalidTag:
+            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
+                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            exit()
 
         # Generamos nuevo nonce.
         new_data_nonce = os.urandom(12)
         user_aesgcm = AESGCM(user_key)
 
+        # Preparamos los datos para autenticarlos.
+        datos_asociados = str(user["BankNum"] + user["DocID"]).encode(encoding='utf-8')
+
         # Encriptamos el dato modificado.
-        new_data_ciphertext = user_aesgcm.encrypt(new_data_nonce, (str(new_data_val)).encode(encoding='utf-8'), None)
+        try:
+            new_data_ciphertext = (
+                user_aesgcm.encrypt(new_data_nonce, (str(new_data_val)).encode(encoding='utf-8'), datos_asociados))
+        except cryptography.exceptions.InvalidTag:
+            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
+                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            exit()
+
 
         #Cambiamos los valores en el usuario.
         user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
@@ -684,20 +714,20 @@ class BankInstance:
         datos_a_cifrar = [email, direccion, str(credito)]
         nonce_array = []
         datos_cifrados = []
+        datos_asociados = str(bank_num + doc_id).encode(encoding='utf-8')
 
         # generamos una clave para el usuario.
-        user_key = AESGCM.generate_key(bit_length=128)
+        user_key = AESGCM.generate_key(bit_length=256)
 
         aesgcm = AESGCM(user_key)
 
         for i in range(len(datos_a_cifrar)):
             # Pasamos el dato a binario.
-            #datos_a_cifrar[i] = base64.b64decode(datos_a_cifrar[i])
             datos_a_cifrar[i] = (datos_a_cifrar[i]).encode(encoding='utf-8')
             # Generamos un nonce para cada dato.
             nonce_array.append(os.urandom(12))
             # Encriptamos.
-            ciphertext = aesgcm.encrypt(nonce_array[i], datos_a_cifrar[i], None)
+            ciphertext = aesgcm.encrypt(nonce_array[i], datos_a_cifrar[i], datos_asociados)
             datos_cifrados.append(ciphertext)
 
         # Ciframos la clave de usuario con la MASTER_KEY.
