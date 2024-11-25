@@ -1,7 +1,6 @@
 import os
 import random
 import re
-import json
 import base64
 from email.errors import InvalidDateDefect
 
@@ -9,6 +8,8 @@ import cryptography
 from cryptography.exceptions import InvalidKey
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+from json_manager import JsonUserDatabase
 
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 MASTER_PWD = b"Adrian_100495924_Maria_100495839"
@@ -30,7 +31,7 @@ class InvalidDataError(Exception):
 
 class BankInstance:
     def __init__(self):
-        pass
+        self.users_database = JsonUserDatabase("database.json")
 
     # FUNCIONES RELATIVAS AL BANK_LOOP
 
@@ -106,7 +107,9 @@ class BankInstance:
         user = self.generate_user_dict(doc_id_user, nombre_user, apellido_user, email_user,
                                        direccion_user, user_pwd, credito_user)
         # Se añade el nuevo usuario al sistema
-        self.create_user_json(user)
+
+        #self.create_user_json(user)
+        self.users_database.create_user_json(user)
 
         print("\n** ¡Usuario registrado con éxito! **")
         print("Número de cuenta asignado:", user["BankNum"])
@@ -121,7 +124,7 @@ class BankInstance:
                 print("(!) Campo obligatorio")
             elif not self.check_regex_doc_id(doc_id_user):
                 print("(!) Documento inválido")
-            elif self.search_user_json("DocID", doc_id_user) is not None:
+            elif self.users_database.search_user_json("DocID", doc_id_user) is not None:
                 print("(!) Parece que ya tienes una cuenta con nosotros")
                 return None
             else:
@@ -266,7 +269,7 @@ class BankInstance:
             if login_doc_id == "":
                 return 0
             # Se chequea si existe algún usuario registrado con ese documento de identidad
-            user_to_login = self.search_user_json("DocID", login_doc_id)
+            user_to_login = self.users_database.search_user_json("DocID", login_doc_id)
             if user_to_login is None:
                 print("(!) ¡Cuenta no encontrada!")
             else:
@@ -356,7 +359,7 @@ class BankInstance:
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
 
         # Actualizamos los valores del json.
-        self.update_user_json(user, [data_key, data_nonce_key])
+        self.users_database.update_user_json(user, [data_key, data_nonce_key])
 
         return data
 
@@ -403,7 +406,7 @@ class BankInstance:
         user[data_key] = base64.b64encode(new_data_ciphertext).decode('utf-8')
 
         # Actualizamos los valores del json.
-        self.update_user_json(user, [data_key, data_nonce_key])
+        self.users_database.update_user_json(user, [data_key, data_nonce_key])
 
     # FUNCIONES RELATIVAS AL USER_SPACE_LOOP
 
@@ -442,7 +445,7 @@ class BankInstance:
         confirmacion_input = input("¿Estás seguro/a de que quieres eliminar tu cuenta? (s/n) ")
         if confirmacion_input == "s":
             print("Eliminando cuenta...")
-            self.delete_user_json(user)
+            self.users_database.delete_user_json(user)
             print("Cuenta eliminada con éxito")
             return False
         return True
@@ -549,7 +552,7 @@ class BankInstance:
                 modificar_nombre_loop = False
             else:
                 user["Nombre"] = nuevo_valor
-                self.update_user_json(user, ["Nombre"])
+                self.users_database.update_user_json(user, ["Nombre"])
                 print("\n¡Nombre modificado con éxito!")
                 modificar_nombre_loop = False
 
@@ -562,7 +565,7 @@ class BankInstance:
                 modificar_apellido_loop = False
             else:
                 user["Apellidos"] = nuevo_valor
-                self.update_user_json(user, ["Apellidos"])
+                self.users_database.update_user_json(user, ["Apellidos"])
                 print("\n¡Apellidos modificados con éxito!")
                 modificar_apellido_loop = False
 
@@ -641,7 +644,7 @@ class BankInstance:
             salt_binary = os.urandom(16)  # type = bytes
             salt = base64.b64encode(salt_binary).decode('utf-8')  # type = str
             # Verificar que salt no existe
-            if self.search_user_json("Salt", salt) is None:
+            if self.users_database.search_user_json("Salt", salt) is None:
                 salt_loop = False
 
         # Se genera la clave derivada de la contraseña usando el nuevo salt
@@ -658,7 +661,7 @@ class BankInstance:
 
         user["Pwd"] = pwd_kdf
         user["Salt"] = salt
-        self.update_user_json(user, ["Pwd", "Salt"])
+        self.users_database.update_user_json(user, ["Pwd", "Salt"])
 
         print("\n¡Contraseña modificada con éxito!")
 
@@ -674,7 +677,7 @@ class BankInstance:
             generated_bank_num = str(random.randint(1000000000000000000000, 9999999999999999999999))
             bank_num = "ES" + generated_bank_num
             # Verificar que el número del banco que se quiere asignar no existe en ningún otro usuario
-            if self.search_user_json("BankNum", bank_num) is None:
+            if self.users_database.search_user_json("BankNum", bank_num) is None:
                 bank_num_loop = False
 
         # No podemos almacenar la contraseña del usuario en claro
@@ -686,7 +689,7 @@ class BankInstance:
             salt_binary = os.urandom(16)  # type = bytes
             salt = base64.b64encode(salt_binary).decode('utf-8')  # type = str
             # Verificar que salt no existe
-            if self.search_user_json("Salt", salt) is None:
+            if self.users_database.search_user_json("Salt", salt) is None:
                 salt_loop = False
 
         # Se genera la clave derivada de la contraseña usando el salt único del usuario
@@ -745,78 +748,7 @@ class BankInstance:
 
         return user_dict
 
-    def create_user_json(self, user_dict: dict) -> None:
-        """Añade un nuevo usuario al archivo json"""
-        file_path = "database.json"
 
-        # Abrir en modo read and write
-        with open(file_path, "r+", encoding="utf-8") as open_file:
-            # Almacenar el contenido del json en una variable
-            json_data = json.load(open_file)
-            # Eliminar el contenido del archivo
-            open_file.seek(0)
-            open_file.truncate(0)
-            # Añadir el usuario a la lista de usuarios del json
-            json_data.append(user_dict)
-            # Escribir el contenido de la variable en el archivo
-            json.dump(json_data, open_file, indent=4)
-
-        open_file.close()
-
-    def delete_user_json(self, user_dict: dict) -> None:
-        """Elimina un usuario con todos sus datos del archivo json"""
-        file_path = "database.json"
-
-        with open(file_path, "r+", encoding="utf-8") as open_file:
-            json_data = json.load(open_file)
-            open_file.seek(0)
-            open_file.truncate(0)
-
-            # Añadir a la lista todos los usuarios excepto el que hay que eliminar
-            new_json = []
-            for user in json_data:
-                if user["BankNum"] != user_dict["BankNum"]:
-                    new_json.append(user)
-
-            json.dump(new_json, open_file, indent=4)
-
-        open_file.close()
-
-    def update_user_json(self, user_dict: dict, keys: list) -> None:
-        """Actualizar los datos del usuario especificados en keys cuando este modifica sus datos"""
-        file_path = "database.json"
-
-        with open(file_path, "r+", encoding="utf-8") as open_file:
-            json_data = json.load(open_file)
-            open_file.seek(0)
-            open_file.truncate(0)
-
-            for user in json_data:
-                if user["BankNum"] == user_dict["BankNum"]:
-                    for key in keys:
-                        user[key] = user_dict[key]
-
-            json.dump(json_data, open_file, indent=4)
-
-        open_file.close()
-
-    def search_user_json(self, key, value) -> dict | None:
-        """Buscar el usuario que contenga el valor (key, value) si existe"""
-        file_path = "database.json"
-
-        # Abrir el archivo en modo read only
-        with open(file_path, "r", encoding="utf-8") as open_file:
-            json_data = json.load(open_file)
-
-        # Recorre todos los usuarios en busca de un match y lo devuelve al encontrarlo
-        for user in json_data:
-            if user[key] == value:
-                open_file.close()
-                return user
-
-        # No se encontró un usuario con esas características
-        open_file.close()
-        return None
 
 
 banko = BankInstance()
