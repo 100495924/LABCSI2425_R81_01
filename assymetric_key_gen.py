@@ -39,10 +39,8 @@ public_pem = public_key.public_bytes(
     format=serialization.PublicFormat.SubjectPublicKeyInfo
 )
 
-pem_dict = {"public_key" : base64.b64encode(public_pem).decode('utf-8'),
-            "private_key" : base64.b64encode(private_pem).decode('utf-8')}
+pem_dict = {"public_key": base64.b64encode(public_pem).decode('utf-8'),
+            "private_key": base64.b64encode(private_pem).decode('utf-8')}
 
 # Guardar el par de claves en el fichero json.
-jsonKeyring.create_user_json(pem_dict)
-
-
+jsonKeyring.insert_dict_json(pem_dict)

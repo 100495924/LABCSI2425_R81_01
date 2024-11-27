@@ -2,14 +2,19 @@ import os
 import random
 import re
 import base64
+import datetime
 from email.errors import InvalidDateDefect
 
 import cryptography
 from cryptography.exceptions import InvalidKey
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 
 from json_manager import JsonUserDatabase
+from json_manager import JsonKeyRing
 
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 MASTER_PWD = b"Adrian_100495924_Maria_100495839"
@@ -22,6 +27,21 @@ kdf = Scrypt(
     p=1,
 )
 MASTER_KEY = kdf.derive(MASTER_PWD)
+
+###################### RECONOCEMOS LA MALA PRÁCTICA DE AQUÍ #####################################
+
+################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
+ASSYMETRIC_KEYS_PWD = b"100495924_100495839"
+
+"""MASTER_SALT = b';\x16\xdeW\x19~\xcc\x96\x7f\xa2&\x9d\x1a/%:'
+kdf = Scrypt(
+    salt=MASTER_SALT,
+    length=32,
+    n=2**14,
+    r=8,
+    p=1,
+)
+ASSYMETRIC_KEYS_ENCRYPTION_KEY = kdf.derive(ASSYMETRIC_KEYS_PWD)"""
 ###################### RECONOCEMOS LA MALA PRÁCTICA DE AQUÍ #####################################
 
 
@@ -32,6 +52,7 @@ class InvalidDataError(Exception):
 class BankInstance:
     def __init__(self):
         self.users_database = JsonUserDatabase("database.json")
+        self.json_pem_keys = JsonKeyRing("pem_keys.json")
 
     # FUNCIONES RELATIVAS AL BANK_LOOP
 
@@ -171,9 +192,10 @@ class BankInstance:
             elif is_numerico:
                 try:
                     int(input_user)
-                    loop = False
                 except ValueError:
                     print("(!) No se ha introducido un número")
+                else:
+                    loop = False
             else:
                 loop = False
 
@@ -295,8 +317,6 @@ class BankInstance:
             # Coincide
             try:
                 kdf.verify(login_pwd.encode(), base64.b64decode(user_to_login["Pwd"]))
-                print("¡Bienvenido de vuelta!")
-                pwd_loop = False
             # No coincide
             # Al alcanzar el máximo número de intentos, se finaliza la ejecución de la app
             except InvalidKey:
@@ -305,6 +325,9 @@ class BankInstance:
                     print(f"(!) ¡Contraseña incorrecta! Te quedan {num_intentos} intentos")
                 elif num_intentos == 1:
                     print(f"(!) ¡Contraseña incorrecta! Te queda {num_intentos} intento")
+            else:
+                print("¡Bienvenido de vuelta!")
+                pwd_loop = False
 
         # Intentos agotados
         if num_intentos == 0:
@@ -461,7 +484,8 @@ class BankInstance:
             print("¿Qué quieres hacer con tu dinero?\n"
                   "1_Sacar dinero de mi cuenta\n"
                   "2_Meter dinero a mi cuenta\n"
-                  "3_Atrás")
+                  "3_Ver histórico de operaciones\n"
+                  "4_Atrás")
             user_input = input("")
 
             if user_input == "1":
@@ -469,6 +493,8 @@ class BankInstance:
             elif user_input == "2":
                 self.meter_dinero(user, user_credito)
             elif user_input == "3":
+                self.historico(user)
+            elif user_input == "4":
                 money_loop = False
             else:
                 print("(!) Opción inválida")
@@ -480,17 +506,21 @@ class BankInstance:
             if dinero_a_sacar == "":
                 sacar_loop = False
             else:
+                # Verificar que se introduce un número
                 try:
                     dinero_a_sacar = int(dinero_a_sacar)
-                    if credito - dinero_a_sacar >= 0:
-                        credito -= dinero_a_sacar
-                        self.modify_cipher_data(user, "Credito", str(credito))
-                        print(f"Has sacado {dinero_a_sacar}€")
-                        sacar_loop = False
-                    else:
-                        print("(!) No puedes sacar más dinero del que tienes")
                 except ValueError:
                     print("(!) No se ha introducido un número")
+                else:
+                    # Verificar que se introduce una cantidad válida
+                    if credito - dinero_a_sacar < 0:
+                        print("(!) No puedes sacar más dinero del que tienes")
+                    else:
+                        credito -= dinero_a_sacar
+                        self.modify_cipher_data(user, "Credito", str(credito))
+                        self.firmar_operacion(user, True, dinero_a_sacar)
+                        # Verificación de firma?
+                        sacar_loop = False
 
     def meter_dinero(self, user: dict, credito: int) -> None:
         meter_loop = True
@@ -501,12 +531,68 @@ class BankInstance:
             else:
                 try:
                     dinero_a_meter = int(dinero_a_meter)
-                    credito += dinero_a_meter
-                    self.modify_cipher_data(user, "Credito", credito)
-                    print(f"Has metido {dinero_a_meter}€")
-                    meter_loop = False
                 except ValueError:
                     print("(!) No se ha introducido un número")
+                else:
+                    credito += dinero_a_meter
+                    self.modify_cipher_data(user, "Credito", credito)
+                    self.firmar_operacion(user, False, dinero_a_meter)
+                    # Verificación de firma?
+                    meter_loop = False
+
+    def firmar_operacion(self, user: dict, sacar: bool, dinero: int) -> None:
+        # Generar doc (message)
+        fecha_actual = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        if sacar:
+            doc = f"({fecha_actual}) -{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
+        else:
+            doc = f"({fecha_actual}) +{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
+        doc_bytes = doc.encode()
+        # Generar firma (signature)
+        private_key = self.json_pem_keys.load_private_key(ASSYMETRIC_KEYS_PWD)
+        signature = private_key.sign(
+            doc_bytes,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+        # Añadir a histórico de operaciones (guardar tupla doc-firma)
+        tuple_store = (doc, base64.b64encode(signature).decode('utf-8'))
+        user['HistoricoFirmas'].append(tuple_store)
+        self.users_database.update_user_json(user, ['HistoricoFirmas'])
+        # Feedback al usuario
+        print(f"¡Operación realizada con éxito! Tu recibo: \n{doc}")
+
+    def historico(self, user: dict):
+        print("\nConsulta todos tus últimos movimientos:")
+        for operacion in reversed(user['HistoricoFirmas']):
+            operacion_doc = operacion[0]
+            operacion_doc_bytes = operacion_doc.encode()
+            operacion_signature_bytes = base64.b64decode(operacion[1])
+            print(operacion_doc)
+            if self.verificar_firma(operacion_doc_bytes, operacion_signature_bytes) == 0:
+                print("(✓) Firma válida")
+            else:
+                print("(!) Firma inválida")
+
+    def verificar_firma(self, doc_bytes: bytes, signature_bytes: bytes) -> int:
+        public_key = self.json_pem_keys.load_public_key()
+        try:
+            public_key.verify(
+                signature_bytes,
+                doc_bytes,
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
+        except InvalidSignature:
+            return -1
+        else:
+            return 0
 
     def revisar_datos(self, user: dict):
         revisar_datos_loop = True
@@ -515,17 +601,17 @@ class BankInstance:
             user_direccion = self.decrypt_data(user, "Direccion").decode('utf-8')
             user_credito = self.decrypt_data(user, "Credito").decode('utf-8')
             print("\nEstos son los datos que guardamos de ti:\n"
-                  f"Número de cuenta*: {user['BankNum']}\n"
-                  f"DNI/NIE*: {user['DocID']}\n"
+                  f"* Número de cuenta: {user['BankNum']}\n"
+                  f"* DNI/NIE: {user['DocID']}\n"
                   f"Nombre: {user['Nombre']}\n"
                   f"Apellidos: {user['Apellidos']}\n"
                   f"Email: {user_email}\n"
                   f"Dirección: {user_direccion}\n"
-                  f"Credito*: {user_credito}€\n"
-                  "Contraseña: **********\n"
-                  "NOTA: Los datos marcados con '*' no se "
-                  "podrán modificar.")
-            dato_a_modificar = input("\n¿Quieres modificar algún dato? \n(para cancelar la operación, presiona enter)\n")
+                  f"* Credito: {user_credito}€\n"
+                  "Contraseña: **********\n")
+            dato_a_modificar = input("\n¿Quieres modificar algún dato?"
+                                     "\nNOTA: Los datos marcados con '*' no se podrán modificar."
+                                     "\n(para cancelar la operación, presiona enter)\n")
             if dato_a_modificar == "":
                 revisar_datos_loop = False
             elif dato_a_modificar.lower() == "nombre":
@@ -541,7 +627,7 @@ class BankInstance:
                 if modificar_contraseña_out == -1:
                     return -1
             else:
-                print("(!) No se ha introducido un nombre de campo válido.")
+                print("(!) No se ha introducido un nombre de campo válido")
 
     def modificar_nombre(self, user: dict):
         modificar_nombre_loop = True
@@ -624,7 +710,6 @@ class BankInstance:
                 # Coincide
                 try:
                     kdf_actual.verify(actual_contraseña.encode(), base64.b64decode(user["Pwd"]))
-                    modificar_contraseña_loop = False
                 # No coincide
                 # Al alcanzar el máximo número de intentos, se cierra sesión para proteger la cuenta
                 except InvalidKey:
@@ -636,6 +721,8 @@ class BankInstance:
                     elif num_intentos == 0:
                         print("(!) Se hicieron demasiados intentos incorrectos. Cerrando sesión.")
                         return -1
+                else:
+                    modificar_contraseña_loop = False
         # Pedirle al usuario una nueva contraseña, generar un nuevo salt y actualizar el JSON
         nueva_contraseña = self.validate_pwd("\nEscribe tu nueva contraseña: ")
         # Generar un nuevo salt único
@@ -743,12 +830,11 @@ class BankInstance:
             "Pwd": pwd_kdf,
             "Salt": salt,
             "UserKeyNonce": base64.b64encode(user_key_nonce).decode('utf-8'),
-            "UserKey": base64.b64encode(user_key_ciphertext).decode('utf-8')
+            "UserKey": base64.b64encode(user_key_ciphertext).decode('utf-8'),
+            "HistoricoFirmas": list()
         }
 
         return user_dict
-
-
 
 
 banko = BankInstance()

@@ -1,3 +1,4 @@
+import base64
 import json
 
 from cryptography.hazmat.primitives.serialization import load_pem_public_key, load_pem_private_key
@@ -7,6 +8,8 @@ class JsonFile:
     def __init__(self, path):
         self.file_path = path
 
+
+class JsonUserDatabase(JsonFile):
     def create_user_json(self, user_dict: dict) -> None:
         """Añade un nuevo usuario al archivo json"""
 
@@ -41,13 +44,12 @@ class JsonFile:
         open_file.close()
         return None
 
-
-class JsonUserDatabase(JsonFile):
     def delete_user_json(self, user_dict: dict) -> None:
         """Elimina un usuario con todos sus datos del archivo json"""
 
         with open(self.file_path, "r+", encoding="utf-8") as open_file:
             json_data = json.load(open_file)
+            # Eliminar el contenido del archivo
             open_file.seek(0)
             open_file.truncate(0)
 
@@ -64,8 +66,10 @@ class JsonUserDatabase(JsonFile):
     def update_user_json(self, user_dict: dict, keys: list) -> None:
         """Actualizar los datos del usuario especificados en keys cuando este modifica sus datos"""
 
+        # Abrir en modo read and write
         with open(self.file_path, "r+", encoding="utf-8") as open_file:
             json_data = json.load(open_file)
+            # Eliminar el contenido del archivo
             open_file.seek(0)
             open_file.truncate(0)
 
@@ -78,16 +82,35 @@ class JsonUserDatabase(JsonFile):
 
         open_file.close()
 
+
 class JsonKeyRing(JsonFile):
-    def load_key(self, public: bool, pwd):
+    def insert_dict_json(self, dict_to_insert: dict) -> None:
+        """Transforma el diccionario dado en el contenido del archivo json"""
+
+        # Abrir en modo read and write (crear archivo si no existe, si existe truncarlo)
+        with open(self.file_path, "w+", encoding="utf-8") as open_file:
+            json.dump(dict_to_insert, open_file, indent=4)
+
+        open_file.close()
+
+    def load_public_key(self):
+        """Devuelve la clave pública deserializada"""
+
         with open(self.file_path, "r", encoding="utf-8") as open_file:
             key_pem_dict = json.load(open_file)
 
-        if public:
-            key_pem_bytes = key_pem_dict["public_key"]
-            key_pem = load_pem_public_key(key_pem_bytes)
-        else:
-            key_pem_bytes = key_pem_dict["private_key"]
-            key_pem = load_pem_private_key(key_pem_bytes, pwd)
+        key_pem_bytes = base64.b64decode(key_pem_dict["public_key"])
+        key_pem = load_pem_public_key(key_pem_bytes)
+
+        return key_pem
+
+    def load_private_key(self, pwd):
+        """Devuelve la clave privada deserializada"""
+
+        with open(self.file_path, "r", encoding="utf-8") as open_file:
+            key_pem_dict = json.load(open_file)
+
+        key_pem_bytes = base64.b64decode(key_pem_dict["private_key"])
+        key_pem = load_pem_private_key(key_pem_bytes, pwd)
 
         return key_pem
