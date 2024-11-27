@@ -2,6 +2,9 @@ import base64
 import json
 
 from cryptography.hazmat.primitives.serialization import load_pem_public_key, load_pem_private_key
+from cryptography import x509
+from cryptography.x509 import Certificate
+from cryptography.hazmat.primitives.asymmetric import padding
 
 
 class JsonFile:
@@ -114,3 +117,38 @@ class JsonKeyRing(JsonFile):
         key_pem = load_pem_private_key(key_pem_bytes, pwd)
 
         return key_pem
+
+    def load_certs(self):
+        """ Devuelve el certificado del sistema, junto con los certificados
+        que forman parte de la cadena de certificación."""
+        with open("./PKI_infrastructure/System_cert/System_cert.pem", "rb") as f:
+            pem_data = f.read()
+
+        with open("./PKI_infrastructure/System_cert/certs.pem", "rb") as f:
+            certs_pem_data = f.read()
+
+        system_cert = x509.load_pem_x509_certificate(pem_data)
+        acs_certs = x509.load_pem_x509_certificates(certs_pem_data)
+
+        return system_cert, acs_certs
+
+    def verificar_cadena_certificacion(self, system_cert: Certificate, acs_certs: list[Certificate]):
+        """ Verifica toda la cadena de certificación del certificado incluido. """
+        # Añadir verificaciones de la validez del periodo, si el emisor tiene permitido emitir
+        # certificados, si el certificado del emisor tiene una clave pública lo suficientemente
+        # fuerte, etc.
+
+        # Verificar la firma del certificado del banco con la clave pública de la AC LvL 1 Banko Moderno.
+        acs_certs[1].public_key().verify(
+            system_cert.signature,
+            system_cert.tbs_certificate_bytes,
+            # Depends on the algorithm used to create the certificate
+            padding.PKCS1v15(),
+            system_cert.signature_hash_algorithm,
+        )
+
+        # Verificamos el certificado de la AC LvL 1 Banko Moderno.
+        acs_certs[1].verify_directly_issued_by(acs_certs[0])
+
+        # No verificamos el certificado de la AC Root Banko moderno ya que es la AC raíz y
+        # elegimos confiar en ella.

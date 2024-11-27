@@ -33,15 +33,6 @@ MASTER_KEY = kdf.derive(MASTER_PWD)
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 ASSYMETRIC_KEYS_PWD = b"100495924_100495839"
 
-"""MASTER_SALT = b';\x16\xdeW\x19~\xcc\x96\x7f\xa2&\x9d\x1a/%:'
-kdf = Scrypt(
-    salt=MASTER_SALT,
-    length=32,
-    n=2**14,
-    r=8,
-    p=1,
-)
-ASSYMETRIC_KEYS_ENCRYPTION_KEY = kdf.derive(ASSYMETRIC_KEYS_PWD)"""
 ###################### RECONOCEMOS LA MALA PRÁCTICA DE AQUÍ #####################################
 
 
@@ -578,8 +569,11 @@ class BankInstance:
                 print("(!) Firma inválida")
 
     def verificar_firma(self, doc_bytes: bytes, signature_bytes: bytes) -> int:
+        (system_cert, acs_certs) = self.json_pem_keys.load_certs()
+        self.json_pem_keys.verificar_cadena_certificacion(system_cert, acs_certs)
         public_key = self.json_pem_keys.load_public_key()
         try:
+            # Verificando la firma de la transacción.
             public_key.verify(
                 signature_bytes,
                 doc_bytes,

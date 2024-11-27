@@ -8,15 +8,6 @@ from json_manager import JsonKeyRing
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 ASSYMETRIC_KEYS_PWD = b"100495924_100495839"
 
-"""MASTER_SALT = b';\x16\xdeW\x19~\xcc\x96\x7f\xa2&\x9d\x1a/%:'
-kdf = Scrypt(
-    salt=MASTER_SALT,
-    length=32,
-    n=2**14,
-    r=8,
-    p=1,
-)
-ASSYMETRIC_KEYS_ENCRYPTION_KEY = kdf.derive(ASSYMETRIC_KEYS_PWD)"""
 ###################### RECONOCEMOS LA MALA PRÁCTICA DE AQUÍ #####################################
 
 # Creamos un archivo Json para guardar el par de claves.
@@ -44,3 +35,22 @@ pem_dict = {"public_key": base64.b64encode(public_pem).decode('utf-8'),
 
 # Guardar el par de claves en el fichero json.
 jsonKeyring.insert_dict_json(pem_dict)
+
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes
+
+# Generamos el CSR para que sea firmado por la AC de nuestro banco.
+system_csr = x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
+    # Información sobre esta sucursal.
+    x509.NameAttribute(NameOID.COUNTRY_NAME, "ES"),
+    x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Madrid"),
+    x509.NameAttribute(NameOID.LOCALITY_NAME, "Madrid"),
+    x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Banko Moderno S.L."),
+    x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Banko Moderno Entidad Central"),
+    x509.NameAttribute(NameOID.COMMON_NAME, "Banko Moderno"),
+])).sign(private_key, hashes.SHA256())
+
+# Write our CSR out to disk.
+with open("./PKI_infrastructure/System_cert/System_req.pem", "wb") as f:
+    f.write(system_csr.public_bytes(serialization.Encoding.PEM))
