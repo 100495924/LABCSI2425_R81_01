@@ -5,7 +5,11 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key, lo
 from cryptography import x509
 from cryptography.x509 import Certificate
 from cryptography.hazmat.primitives.asymmetric import padding
+from datetime import datetime, timezone
 
+
+class InvalidCertificate(Exception):
+    pass
 
 class JsonFile:
     def __init__(self, path):
@@ -133,22 +137,53 @@ class JsonKeyRing(JsonFile):
         return system_cert, acs_certs
 
     def verificar_cadena_certificacion(self, system_cert: Certificate, acs_certs: list[Certificate]):
-        """ Verifica toda la cadena de certificación del certificado incluido. """
+        """ Verifica toda la cadena de certificación del certificado incluido el del sistema. """
         # Añadir verificaciones de la validez del periodo, si el emisor tiene permitido emitir
         # certificados, si el certificado del emisor tiene una clave pública lo suficientemente
         # fuerte, etc.
+
+        if system_cert.public_key().key_size < 2048:
+            raise InvalidCertificate("[ERROR] Este certificado no tiene una longitud de clave adecuada.")
+
+        local_time = datetime.now(timezone.utc)
+        # Revisar el periodo del certificado.
+        if local_time < system_cert.not_valid_before_utc or local_time > system_cert.not_valid_after_utc:
+            raise InvalidCertificate("[ERROR] El periodo del certificado no es válido.")
+
+        for cert in acs_certs:
+            if not cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca:
+                raise InvalidCertificate(
+                    "[ERROR] Los emisores de este certificado no tienen permisos para emitir certificados.")
+            if cert.public_key().key_size < 2048:
+                raise InvalidCertificate(
+                    "[ERROR] Los certificados de los emisores no tienen una longitud de clave adecuada.")
+            if local_time < cert.not_valid_before_utc or local_time > cert.not_valid_after_utc:
+                raise InvalidCertificate("[ERROR] Los certificados de los emisores no tienen un periodo válido.")
 
         # Verificar la firma del certificado del banco con la clave pública de la AC LvL 1 Banko Moderno.
         acs_certs[1].public_key().verify(
             system_cert.signature,
             system_cert.tbs_certificate_bytes,
-            # Depends on the algorithm used to create the certificate
             padding.PKCS1v15(),
             system_cert.signature_hash_algorithm,
         )
 
-        # Verificamos el certificado de la AC LvL 1 Banko Moderno.
-        acs_certs[1].verify_directly_issued_by(acs_certs[0])
+        # Verificamos la firma del certificado de la AC LvL 1 Banko Moderno.
+        # ACs_certs[1].verify_directly_issued_by(ACs_certs[0])
+        acs_certs[0].public_key().verify(
+            acs_certs[1].signature,
+            acs_certs[1].tbs_certificate_bytes,
+            padding.PKCS1v15(),
+            acs_certs[1].signature_hash_algorithm,
+        )
+
+        # Verificar firma de AC Root también
+        acs_certs[0].public_key().verify(
+            acs_certs[0].signature,
+            acs_certs[0].tbs_certificate_bytes,
+            padding.PKCS1v15(),
+            acs_certs[0].signature_hash_algorithm,
+        )
 
         # No verificamos el certificado de la AC Root Banko moderno ya que es la AC raíz y
         # elegimos confiar en ella.

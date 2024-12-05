@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 from json_manager import JsonUserDatabase
 from json_manager import JsonKeyRing
+from test_certs import system_cert
 
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 MASTER_PWD = b"Adrian_100495924_Maria_100495839"
@@ -571,7 +572,7 @@ class BankInstance:
     def verificar_firma(self, doc_bytes: bytes, signature_bytes: bytes) -> int:
         (system_cert, acs_certs) = self.json_pem_keys.load_certs()
         self.json_pem_keys.verificar_cadena_certificacion(system_cert, acs_certs)
-        public_key = self.json_pem_keys.load_public_key()
+        public_key = system_cert.public_key()
         try:
             # Verificando la firma de la transacción.
             public_key.verify(
