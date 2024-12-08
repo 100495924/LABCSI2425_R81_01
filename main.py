@@ -2,7 +2,7 @@ import os
 import random
 import re
 import base64
-import datetime
+from datetime import datetime, timezone
 from email.errors import InvalidDateDefect
 
 import cryptography
@@ -13,8 +13,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from json_manager import JsonUserDatabase
-from json_manager import JsonKeyRing
+from json_manager import *
 
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 MASTER_PWD = b"Adrian_100495924_Maria_100495839"
@@ -42,6 +41,7 @@ class BankInstance:
     def __init__(self):
         self.users_database = JsonUserDatabase("database.json")
         self.json_pem_keys = JsonKeyRing("pem_keys.json")
+        self.log = LogFile("log.txt")
 
     # FUNCIONES RELATIVAS AL BANK_LOOP
 
@@ -71,7 +71,6 @@ class BankInstance:
                     return
                 # Si el usuario le da a enter, sale del proceso de log in
                 elif user != 0:
-                    # Rotacion de clave
                     self.user_space_loop(user)
             elif user_input == "3":
                 # Salir
@@ -119,6 +118,8 @@ class BankInstance:
                                        direccion_user, user_pwd, credito_user)
         # Se añade el nuevo usuario al sistema
         self.users_database.create_user_json(user)
+
+        self.log.add_log_entry(f"Usuario {user['DocID']} registrado, con todos sus datos cifrados y almacenados")
 
         print("\n** ¡Usuario registrado con éxito! **")
         print("Número de cuenta asignado:", user["BankNum"])
@@ -314,7 +315,11 @@ class BankInstance:
                     print(f"(!) ¡Contraseña incorrecta! Te quedan {num_intentos} intentos")
                 elif num_intentos == 1:
                     print(f"(!) ¡Contraseña incorrecta! Te queda {num_intentos} intento")
+                self.log.add_log_entry(f"VERIFICACIÓN DE CONTRASEÑA (INVÁLIDA): "
+                                       f"el usuario {user_to_login['DocID']} quiere iniciar sesión")
             else:
+                self.log.add_log_entry(f"VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): "
+                                       f"el usuario {user_to_login['DocID']} quiere iniciar sesión")
                 print("¡Bienvenido de vuelta!")
                 pwd_loop = False
 
@@ -355,6 +360,8 @@ class BankInstance:
         pwd_kdf_binary = kdf.derive(pwd_binary)  # clave derivada en binario
         pwd_kdf = base64.b64encode(pwd_kdf_binary).decode('utf-8')  # string en base64 que puede ser almacenado
 
+        self.log.add_log_entry(f"KDF CONTRASEÑA: rotación de clave del usuario {user['DocID']}")
+
         # Una nueva clave de usuario generada con AESGCM
         user_key = AESGCM.generate_key(bit_length=256)
         aesgcm = AESGCM(user_key)
@@ -365,6 +372,7 @@ class BankInstance:
         credito = self.decrypt_data(user, "Credito")
 
         datos_a_cifrar = [email, direccion, credito]
+        datos_a_cifrar_string = ["Email", "Direccion", "Credito"]
         nonce_array = []
         datos_cifrados = []
         datos_asociados = str(user["BankNum"] + user["DocID"]).encode(encoding='utf-8')
@@ -376,11 +384,17 @@ class BankInstance:
             # Ciframos
             ciphertext = aesgcm.encrypt(nonce_array[i], datos_a_cifrar[i], datos_asociados)
             datos_cifrados.append(ciphertext)
+            self.log.add_log_entry(f"CIFRADO: "
+                                   f"dato '{datos_a_cifrar_string[i]}' del usuario {user['DocID']} "
+                                   f"con su clave AESGCM por rotación de clave")
 
         # Ciframos la nueva clave de usuario con la MASTER_KEY
         user_key_nonce = os.urandom(12)
         master_aesgcm = AESGCM(MASTER_KEY)
         user_key_ciphertext = master_aesgcm.encrypt(user_key_nonce, user_key, None)
+
+        self.log.add_log_entry(f"CIFRADO: "
+                               f"clave AESGCM del usuario {user['DocID']} con clave maestra por rotación de clave")
 
         # Los nuevos datos del usuario son actualizados en la database
         user = {
@@ -452,6 +466,8 @@ class BankInstance:
         # Actualizamos los valores del json.
         self.users_database.update_user_json(user, [data_key, data_nonce_key])
 
+        self.log.add_log_entry(f"DESCIFRADO: dato '{data_key}' del usuario {user['DocID']}")
+
         return data
 
     def modify_cipher_data(self, user: dict, data_key: str, new_data_val):
@@ -497,6 +513,8 @@ class BankInstance:
 
         # Actualizamos los valores del json.
         self.users_database.update_user_json(user, [data_key, data_nonce_key])
+
+        self.log.add_log_entry(f"CIFRADO: dato '{data_key}' modificado por el usuario {user['DocID']}")
 
     # FUNCIONES RELATIVAS AL USER_SPACE_LOOP
 
@@ -606,11 +624,11 @@ class BankInstance:
 
     def firmar_operacion(self, user: dict, sacar: bool, dinero: int) -> None:
         # Generar doc (message)
-        fecha_actual = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        fecha_hora_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         if sacar:
-            doc = f"({fecha_actual}) -{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
+            doc = f"({fecha_hora_actual}) -{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
         else:
-            doc = f"({fecha_actual}) +{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
+            doc = f"({fecha_hora_actual}) +{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
         doc_bytes = doc.encode()
         # Generar firma (signature)
         private_key = self.json_pem_keys.load_private_key(ASSYMETRIC_KEYS_PWD)
@@ -626,6 +644,9 @@ class BankInstance:
         tuple_store = (doc, base64.b64encode(signature).decode('utf-8'))
         user['HistoricoFirmas'].append(tuple_store)
         self.users_database.update_user_json(user, ['HistoricoFirmas'])
+
+        self.log.add_log_entry(f"FIRMA: {doc}")
+
         # Feedback al usuario
         print(f"¡Operación realizada con éxito! Tu recibo: \n{doc}")
 
@@ -645,8 +666,10 @@ class BankInstance:
         if print_operacion_doc:
             print(operacion_doc)
         if self.verificar_firma(operacion_doc_bytes, operacion_signature_bytes) == 0:
+            self.log.add_log_entry(f"VERIFICACIÓN DE FIRMA (VÁLIDA): {operacion_doc}")
             print("(✓) Firma válida")
         else:
+            self.log.add_log_entry(f"VERIFICACIÓN DE FIRMA (INVÁLIDA): {operacion_doc}")
             print("(!) Firma inválida")
 
     def verificar_firma(self, doc_bytes: bytes, signature_bytes: bytes) -> int:
@@ -796,8 +819,12 @@ class BankInstance:
                     elif num_intentos == 0:
                         print("(!) Se hicieron demasiados intentos incorrectos. Cerrando sesión.")
                         return -1
+                    self.log.add_log_entry(f"VERIFICACIÓN DE CONTRASEÑA (INVÁLIDA): "
+                                           f"el usuario {user['DocID']} quiere cambiar de contraseña")
                 else:
                     modificar_contraseña_loop = False
+                    self.log.add_log_entry(f"VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): "
+                                           f"el usuario {user['DocID']} quiere cambiar de contraseña")
         # Pedirle al usuario una nueva contraseña, generar un nuevo salt y actualizar el JSON
         nueva_contraseña = self.validate_pwd("\nEscribe tu nueva contraseña: ")
         # Generar un nuevo salt único
@@ -824,6 +851,8 @@ class BankInstance:
         user["Pwd"] = pwd_kdf
         user["Salt"] = salt
         self.users_database.update_user_json(user, ["Pwd", "Salt"])
+
+        self.log.add_log_entry(f"KDF CONTRASEÑA: cambio de contraseña por el usuario {user['DocID']}")
 
         print("\n¡Contraseña modificada con éxito!")
 
@@ -866,8 +895,12 @@ class BankInstance:
         pwd_kdf_binary = kdf.derive(pwd_binary)  # clave derivada en binario
         pwd_kdf = base64.b64encode(pwd_kdf_binary).decode('utf-8')  # string en base64 que puede ser almacenado
 
+        self.log.add_log_entry(f"KDF CONTRASEÑA: "
+                               f"registro del usuario {doc_id}")
+
         # cifrar los datos con AES_GCM.
         datos_a_cifrar = [email, direccion, str(credito)]
+        datos_a_cifrar_string = ["Email", "Direccion", "Credito"]
         nonce_array = []
         datos_cifrados = []
         datos_asociados = str(bank_num + doc_id).encode(encoding='utf-8')
@@ -885,11 +918,17 @@ class BankInstance:
             # Encriptamos.
             ciphertext = aesgcm.encrypt(nonce_array[i], datos_a_cifrar[i], datos_asociados)
             datos_cifrados.append(ciphertext)
+            self.log.add_log_entry(f"CIFRADO: "
+                                   f"dato '{datos_a_cifrar_string[i]}' del usuario {doc_id} "
+                                   f"con su clave AESGCM por registro")
 
         # Ciframos la clave de usuario con la MASTER_KEY.
         user_key_nonce = os.urandom(12)
         master_aesgcm = AESGCM(MASTER_KEY)
         user_key_ciphertext = master_aesgcm.encrypt(user_key_nonce, user_key, None)
+
+        self.log.add_log_entry(f"CIFRADO: "
+                               f"clave AESGCM del usuario {doc_id} con clave maestra por registro")
 
         user_dict = {
             "BankNum": bank_num,

@@ -76,7 +76,6 @@ class JsonUserDatabase(JsonFile):
         Actualizar los datos del usuario especificados en keys cuando este modifica sus datos
         Si no se especifica keys, se actualizan todos los datos
         """
-
         # Abrir en modo read and write
         with open(self.file_path, "r+", encoding="utf-8") as open_file:
             json_data = json.load(open_file)
@@ -193,3 +192,12 @@ class JsonKeyRing(JsonFile):
 
         # No verificamos el certificado de la AC Root Banko moderno ya que es la AC raíz y
         # elegimos confiar en ella.
+
+
+class LogFile(JsonFile):
+    def add_log_entry(self, message: str):
+        """Añade una nueva entrada al log (después de realizar algo criptográficamente relevante)"""
+        with open(self.file_path, "a", encoding="utf-8") as open_file:
+            timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            open_file.write(f"({timestamp}) {message}\n")
+        open_file.close()

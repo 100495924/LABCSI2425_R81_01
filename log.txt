@@ -1,0 +1,50 @@
+(08/12/2024 21:18:35) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(08/12/2024 21:18:35) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(08/12/2024 21:18:35) DESCIFRADO: dato 'Email' del usuario X9875211T
+(08/12/2024 21:18:35) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(08/12/2024 21:18:35) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:18:35) CIFRADO: dato 'Email' del usuario X9875211T con su clave AESGCM por rotación de clave
+(08/12/2024 21:18:35) CIFRADO: dato 'Direccion' del usuario X9875211T con su clave AESGCM por rotación de clave
+(08/12/2024 21:18:35) CIFRADO: dato 'Credito' del usuario X9875211T con su clave AESGCM por rotación de clave
+(08/12/2024 21:18:35) CIFRADO: clave AESGCM del usuario X9875211T con clave maestra por rotación de clave
+(08/12/2024 21:19:00) DESCIFRADO: dato 'Email' del usuario X9875211T
+(08/12/2024 21:19:00) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(08/12/2024 21:19:00) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:19:22) CIFRADO: dato 'Email' modificado por el usuario X9875211T
+(08/12/2024 21:19:22) DESCIFRADO: dato 'Email' del usuario X9875211T
+(08/12/2024 21:19:22) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(08/12/2024 21:19:22) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:19:27) CIFRADO: dato 'Email' modificado por el usuario X9875211T
+(08/12/2024 21:19:27) DESCIFRADO: dato 'Email' del usuario X9875211T
+(08/12/2024 21:19:27) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(08/12/2024 21:19:27) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:19:56) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere cambiar de contraseña
+(08/12/2024 21:20:11) KDF CONTRASEÑA: cambio de contraseña por el usuario X9875211T
+(08/12/2024 21:20:11) DESCIFRADO: dato 'Email' del usuario X9875211T
+(08/12/2024 21:20:11) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(08/12/2024 21:20:11) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:20:46) VERIFICACIÓN DE CONTRASEÑA (INVÁLIDA): el usuario X9875211T quiere cambiar de contraseña
+(08/12/2024 21:20:52) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere cambiar de contraseña
+(08/12/2024 21:21:00) KDF CONTRASEÑA: cambio de contraseña por el usuario X9875211T
+(08/12/2024 21:21:00) DESCIFRADO: dato 'Email' del usuario X9875211T
+(08/12/2024 21:21:00) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(08/12/2024 21:21:00) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:21:50) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 12:27:25) +10€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 12:27:19) -10€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 10:38:05) +7€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 10:37:54) -7€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 10:27:14) +7€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 10:26:48) -7€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (04/12/2024 12:34:17) -900€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (04/12/2024 12:28:33) +777€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) VERIFICACIÓN DE FIRMA (VÁLIDA): (27/11/2024 21:33:23) +100€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:21:52) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:22:05) CIFRADO: dato 'Credito' modificado por el usuario X9875211T
+(08/12/2024 21:22:05) FIRMA: (08/12/2024 21:22:05) -2€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:22:05) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 21:22:05) -2€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:22:05) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(08/12/2024 21:23:05) CIFRADO: dato 'Credito' modificado por el usuario X9875211T
+(08/12/2024 21:23:05) FIRMA: (08/12/2024 21:23:05) +100€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:23:05) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 21:23:05) +100€ en la cuenta del usuario con documento de identidad X9875211T
+(08/12/2024 21:23:05) DESCIFRADO: dato 'Credito' del usuario X9875211T
