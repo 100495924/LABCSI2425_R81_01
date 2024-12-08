@@ -27,12 +27,10 @@ kdf = Scrypt(
     p=1,
 )
 MASTER_KEY = kdf.derive(MASTER_PWD)
-
 ###################### RECONOCEMOS LA MALA PRÁCTICA DE AQUÍ #####################################
 
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 ASSYMETRIC_KEYS_PWD = b"100495924_100495839"
-
 ###################### RECONOCEMOS LA MALA PRÁCTICA DE AQUÍ #####################################
 
 
@@ -73,6 +71,7 @@ class BankInstance:
                     return
                 # Si el usuario le da a enter, sale del proceso de log in
                 elif user != 0:
+                    # Rotacion de clave
                     self.user_space_loop(user)
             elif user_input == "3":
                 # Salir
@@ -119,8 +118,6 @@ class BankInstance:
         user = self.generate_user_dict(doc_id_user, nombre_user, apellido_user, email_user,
                                        direccion_user, user_pwd, credito_user)
         # Se añade el nuevo usuario al sistema
-
-        #self.create_user_json(user)
         self.users_database.create_user_json(user)
 
         print("\n** ¡Usuario registrado con éxito! **")
@@ -267,7 +264,8 @@ class BankInstance:
         return ""
 
     def log_in(self) -> dict | int:
-        """Devuelve un diccionario con los datos del usuario si se loguea con éxito, 0 si se cancela la operación,
+        """Devuelve un diccionario con los datos del usuario si se inicia sesión con éxito,
+        0 si se cancela la operación,
         -1 si se termina el número de intentos para introducir una contraseña"""
         user_to_login = None
 
@@ -324,7 +322,86 @@ class BankInstance:
         if num_intentos == 0:
             return -1
 
+        # Si estamos en esta parte del código, significa que se ha iniciado sesión con éxito
+        self.rotacion_clave(user_to_login, login_pwd)
+
         return user_to_login
+
+    def rotacion_clave(self, user: dict, login_pwd: str):
+        """
+        La clave derivada de la contraseña se obtiene con un nuevo salt
+        Se genera una nueva clave de usuario con AESGCM
+        Todos los datos cifrados reciben un nuevo nonce y vuelven a ser cifrados con esa nueva clave
+        (excepto la clave en sí, que se cifra con la MASTER_KEY)
+        """
+        # Un nuevo salt para la contraseña
+        salt_loop = True
+        while salt_loop:
+            salt_binary = os.urandom(16)  # type = bytes
+            salt = base64.b64encode(salt_binary).decode('utf-8')  # type = str
+            # Verificar que salt no existe
+            if self.users_database.search_user_json("Salt", salt) is None:
+                salt_loop = False
+
+        # Se genera la clave derivada de la contraseña usando el nuevo salt único del usuario
+        kdf = Scrypt(
+            salt=salt_binary,
+            length=32,
+            n=2 ** 14,
+            r=8,
+            p=1,
+        )
+        pwd_binary = login_pwd.encode()  # contraseña en claro en binario
+        pwd_kdf_binary = kdf.derive(pwd_binary)  # clave derivada en binario
+        pwd_kdf = base64.b64encode(pwd_kdf_binary).decode('utf-8')  # string en base64 que puede ser almacenado
+
+        # Una nueva clave de usuario generada con AESGCM
+        user_key = AESGCM.generate_key(bit_length=256)
+        aesgcm = AESGCM(user_key)
+
+        # Los datos que deben volver a ser cifrados con la nueva clave de usuario
+        email = self.decrypt_data(user, "Email")
+        direccion = self.decrypt_data(user, "Direccion")
+        credito = self.decrypt_data(user, "Credito")
+
+        datos_a_cifrar = [email, direccion, credito]
+        nonce_array = []
+        datos_cifrados = []
+        datos_asociados = str(user["BankNum"] + user["DocID"]).encode(encoding='utf-8')
+
+        # Para cada dato a cifrar
+        for i in range(len(datos_a_cifrar)):
+            # Generamos un nuevo nonce
+            nonce_array.append(os.urandom(12))
+            # Ciframos
+            ciphertext = aesgcm.encrypt(nonce_array[i], datos_a_cifrar[i], datos_asociados)
+            datos_cifrados.append(ciphertext)
+
+        # Ciframos la nueva clave de usuario con la MASTER_KEY
+        user_key_nonce = os.urandom(12)
+        master_aesgcm = AESGCM(MASTER_KEY)
+        user_key_ciphertext = master_aesgcm.encrypt(user_key_nonce, user_key, None)
+
+        # Los nuevos datos del usuario son actualizados en la database
+        user = {
+            "BankNum": user["BankNum"],
+            "DocID": user["DocID"],
+            "Nombre": user["Nombre"],
+            "Apellidos": user["Apellidos"],
+            "EmailNonce": base64.b64encode(nonce_array[0]).decode('utf-8'),
+            "Email": base64.b64encode(datos_cifrados[0]).decode('utf-8'),
+            "DireccionNonce": base64.b64encode(nonce_array[1]).decode('utf-8'),
+            "Direccion": base64.b64encode(datos_cifrados[1]).decode('utf-8'),
+            "CreditoNonce": base64.b64encode(nonce_array[2]).decode('utf-8'),
+            "Credito": base64.b64encode(datos_cifrados[2]).decode('utf-8'),
+            "Pwd": pwd_kdf,
+            "Salt": salt,
+            "UserKeyNonce": base64.b64encode(user_key_nonce).decode('utf-8'),
+            "UserKey": base64.b64encode(user_key_ciphertext).decode('utf-8'),
+            "HistoricoFirmas": user["HistoricoFirmas"]
+        }
+
+        self.users_database.update_user_json(user)
 
     def decrypt_data(self, user: dict, data_key: str):
         """ Función para desencriptar un dato del usuario"""
@@ -342,8 +419,8 @@ class BankInstance:
         try:
             user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
         except cryptography.exceptions.InvalidTag:
-            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
-                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            print("(!) ¡Algo ha salido mal con tus datos!\n"
+                  "Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
             exit()
 
         # Preparamos los datos para autenticarlos.
@@ -356,8 +433,8 @@ class BankInstance:
         try:
             data = user_aesgcm.decrypt(data_nonce, data_ciphertext, datos_asociados)
         except cryptography.exceptions.InvalidTag:
-            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
-                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            print("(!) ¡Algo ha salido mal con tus datos!\n"
+                  "Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
             exit()
 
         # Volvemos a encriptar el dato con un nuevo nonce.
@@ -365,8 +442,8 @@ class BankInstance:
         try:
             new_data_ciphertext = user_aesgcm.encrypt(new_data_nonce, data, datos_asociados)
         except cryptography.exceptions.InvalidTag:
-            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
-                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            print("(!) ¡Algo ha salido mal con tus datos!\n"
+                  "Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
             exit()
 
         user[data_nonce_key] = base64.b64encode(new_data_nonce).decode('utf-8')
@@ -378,8 +455,7 @@ class BankInstance:
         return data
 
     def modify_cipher_data(self, user: dict, data_key: str, new_data_val):
-        """Encriptar el dato nuevo con un nuevo nonce y sustituir los
-        valores respectivos del user"""
+        """Encriptar el dato nuevo con un nuevo nonce y sustituir los valores respectivos del user"""
         """ Función para modificar un dato cifrado del usuario."""
         data_nonce_key = data_key + "Nonce"
         try:
@@ -395,8 +471,8 @@ class BankInstance:
         try:
             user_key = master_aesgcm.decrypt(user_key_nonce, user_key_ciphertext, None)
         except cryptography.exceptions.InvalidTag:
-            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
-                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            print("(!) ¡Algo ha salido mal con tus datos!\n"
+                  "Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
             exit()
 
         # Generamos nuevo nonce.
@@ -411,8 +487,8 @@ class BankInstance:
             new_data_ciphertext = (
                 user_aesgcm.encrypt(new_data_nonce, (str(new_data_val)).encode(encoding='utf-8'), datos_asociados))
         except cryptography.exceptions.InvalidTag:
-            print("ERROR: ¡Algo ha salido mal con tus datos!\n"
-                  "- Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
+            print("(!) ¡Algo ha salido mal con tus datos!\n"
+                  "Puedes contactar con el equipo de soporte para obtener una respuesta más elaborada.")
             exit()
 
         # Cambiamos los valores en el usuario.

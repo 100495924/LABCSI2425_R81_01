@@ -71,8 +71,11 @@ class JsonUserDatabase(JsonFile):
 
         open_file.close()
 
-    def update_user_json(self, user_dict: dict, keys: list) -> None:
-        """Actualizar los datos del usuario especificados en keys cuando este modifica sus datos"""
+    def update_user_json(self, user_dict: dict, keys: list = None) -> None:
+        """
+        Actualizar los datos del usuario especificados en keys cuando este modifica sus datos
+        Si no se especifica keys, se actualizan todos los datos
+        """
 
         # Abrir en modo read and write
         with open(self.file_path, "r+", encoding="utf-8") as open_file:
@@ -83,6 +86,8 @@ class JsonUserDatabase(JsonFile):
 
             for user in json_data:
                 if user["BankNum"] == user_dict["BankNum"]:
+                    if keys is None:
+                        keys = user_dict.keys()
                     for key in keys:
                         user[key] = user_dict[key]
 
@@ -125,7 +130,7 @@ class JsonKeyRing(JsonFile):
 
     def load_certs(self):
         """ Devuelve el certificado del sistema, junto con los certificados
-        que forman parte de la cadena de certificación."""
+        que forman parte de la cadena de certificación """
         with open("./PKI_infrastructure/System_cert/System_cert.pem", "rb") as f:
             pem_data = f.read()
 
@@ -138,28 +143,28 @@ class JsonKeyRing(JsonFile):
         return system_cert, acs_certs
 
     def verificar_cadena_certificacion(self, system_cert: Certificate, acs_certs: list[Certificate]):
-        """ Verifica toda la cadena de certificación del certificado incluido el del sistema. """
+        """ Verifica toda la cadena de certificación del certificado incluido el del sistema """
         # Añadir verificaciones de la validez del periodo, si el emisor tiene permitido emitir
         # certificados, si el certificado del emisor tiene una clave pública lo suficientemente
         # fuerte, etc.
 
         if system_cert.public_key().key_size < 2048:
-            raise InvalidCertificate("[ERROR] Este certificado no tiene una longitud de clave adecuada.")
+            raise InvalidCertificate("(!) Este certificado no tiene una longitud de clave adecuada")
 
         local_time = datetime.now(timezone.utc)
         # Revisar el periodo del certificado.
         if local_time < system_cert.not_valid_before_utc or local_time > system_cert.not_valid_after_utc:
-            raise InvalidCertificate("[ERROR] El periodo del certificado no es válido.")
+            raise InvalidCertificate("(!) El periodo del certificado no es válido")
 
         for cert in acs_certs:
             if not cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca:
                 raise InvalidCertificate(
-                    "[ERROR] Los emisores de este certificado no tienen permisos para emitir certificados.")
+                    "(!) Los emisores de este certificado no tienen permisos para emitir certificados")
             if cert.public_key().key_size < 2048:
                 raise InvalidCertificate(
-                    "[ERROR] Los certificados de los emisores no tienen una longitud de clave adecuada.")
+                    "(!) Los certificados de los emisores no tienen una longitud de clave adecuada")
             if local_time < cert.not_valid_before_utc or local_time > cert.not_valid_after_utc:
-                raise InvalidCertificate("[ERROR] Los certificados de los emisores no tienen un periodo válido.")
+                raise InvalidCertificate("(!) Los certificados de los emisores no tienen un periodo válido")
 
         # Verificar la firma del certificado del banco con la clave pública de la AC LvL 1 Banko Moderno.
         acs_certs[1].public_key().verify(
