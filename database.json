@@ -4,12 +4,12 @@
         "DocID": "X9875211T",
         "Nombre": "Adrian",
         "Apellidos": "giurca",
-        "EmailNonce": "nHiZ67WgQOYhhW0g",
-        "Email": "0gmFxthrx8SBkWaPZwYzJyzZi/9Q",
-        "DireccionNonce": "Qx0UZsWtcl09qBBc",
-        "Direccion": "SQaErPV6hwrHLrYXOlXqXGCpuK9cOWu2CyJDvVByes+rbU3vceArDKlI6SKisi5fwDLH6ZM=",
-        "CreditoNonce": "uvZwLtQkKuWe7Os4",
-        "Credito": "hSIRseeFFzrnvLxm/K4mbaAF",
+        "EmailNonce": "pCQ5PWxsfsrP1es/",
+        "Email": "ydyziD8JnlogwuajQOHErBThdEJ1",
+        "DireccionNonce": "omGJCUoaVdW9JvQx",
+        "Direccion": "f39wkAURGNDp2DF2yofXzW640x5B5yJitHY6SBNbtN0cUTQQ9+/ETBJZQPbtgT95YNQbFNc=",
+        "CreditoNonce": "6FEZc9xXXkQbTRbT",
+        "Credito": "ZrAOoW6WxrvdOcUefUZgbwzU",
         "Pwd": "vIuCajp1ChCUxOPapLynkVdWoJoxiegxTEaLwhez3iw=",
         "Salt": "sibJwSfyxK3LVTe1ckpxNA==",
         "UserKeyNonce": "xqpc20kGiTIdKPvd",
@@ -26,6 +26,22 @@
             [
                 "(04/12/2024 12:34:17) -900\u20ac en la cuenta del usuario con documento de identidad X9875211T",
                 "UgmVreOQEgU3aMUcZmYRFwKSMnNDc7/GIg9wJ1Me/J9Y7UYu2vhEWRRJG6UvBku72wg8aEd1MDkxYXqqrCCz+3pcaj2N2Gavqctm7VBVyXRtMURjHtRdE9vmQTmIW883cwGJKeH/QR91MWkS4zAEbr0hsVBdAD2DLr/PNQ5grCwpdPQU99E5FyXwgjmD8iMH3T52eq8pYlydUCLCb9GcpPNdAQGravMG7l9kl2Qdcrmi12hKTh1EnhmnU/5VEGH5rMJ1SmcjVWSwq0iQVkONQ5a6CV+0k0iR7cWPdet5dmyWlZUR4/6zqX1jTao3otty5m16dCXv/CXgDrF3yT/lqQ=="
+            ],
+            [
+                "(08/12/2024 10:26:48) -7\u20ac en la cuenta del usuario con documento de identidad X9875211T",
+                "VCtGSVvANCymC4jdRLKrOIaY0j+xA6+RQOSQzx6kjY4itxecKVr8U3G+J+BcFl8mCdt5AAOhEEm+ibRFd9HUFCbjczav77+8B9/0CJWsBGD1GQSP2Lo2gOw8g5TPn+PWok/i50e2YihP6KaqYhSQzFMK+LGKn9KZEv7BM/PobJ5ICyqvixYq+LxvBAXfaXKBL6uOnQaqz5p3DroVJLxamclHvb/fbS79xL4DQPi6gpZSsytPIvN1H0AH/yes1iV/oO4FYsjskULlJ7fDSrFtUkHYeOWRwaBXz5Hb2fP/1xkmdF/I+FEkRU+YCiurci0nspkBf6dl1Oleh7DH815svA=="
+            ],
+            [
+                "(08/12/2024 10:27:14) +7\u20ac en la cuenta del usuario con documento de identidad X9875211T",
+                "n4WobMPkTMeHJWcFIipii69g5E+OpLHbvh5mqjSzqH3pF3vNWcyVYKyQDbbNb822Y50aqhfVPoAHbXwE77/x7o4ogKVFGJPbk5BHE9d52WPeoBLnpqjwjW23RTuxgNxFcMHvFprOEXvGkKaYWcMhi+wis4weQjdOUvzMJ29d/h4Ngls8TvTwiJm8CmsDvIB8Nep2tHkc8uHKZsWWXwp7q6rfr1CV11zjt57gBgJupY5n2VgiL0bCGg2Ytl9HcqgcnshvAvCfDW2qonEQ+g6qP/HQT6i3Wz+k80Dlp+BZDz6r8QJXvWiBt0Q+OHmbjYMqZgfWPJc7T68Z08eFrqdXvA=="
+            ],
+            [
+                "(08/12/2024 10:37:54) -7\u20ac en la cuenta del usuario con documento de identidad X9875211T",
+                "O+xXB+vYYjY1cHFfq9VUXB9ABsfztiTiw6nlsD9aT8z2SfapMRlpBONROJeRvQfa0p8upC1tNSiznGi2YT2Y+3FAFZNMuAbKed1RfwZhKclb1g+tMLmSzE5Tj1wRpTGaVXJpVRPs0K/9tTYOQV0ofjXcdBk4nzEhU1whbrOjnUGsKH+njM4bfxhjWzusyGZx+21ZdktE3E+VWBTVtgT4KOUT2K4+va4gzCwN/Y9F7+xGFtKHwV3/TYNMjhEDv9kV/OfBfmfjN5riQuDDjjGrvMMTO99Rc2gG6KwG6Pa8CsPdgEz3zjwvvHM5xYWUA09vE3W+PMo1jtM9f7niaPpt/Q=="
+            ],
+            [
+                "(08/12/2024 10:38:05) +7\u20ac en la cuenta del usuario con documento de identidad X9875211T",
+                "kb7ritVErtTS0deFO7Hu0t83mR3gEdVsUYx2oyNkN3vswCPd7U0uGOrcq8EYqNgNOyTutBIcm+El6W85O9qgxM8TNThZzlrBiVp8wLh+G0SadW0nyuQQZ7+udKmeBvxciGX1pPxebhADH3cHcEBQS8VXDVlwImx8bZzuLt7epTDCRHXm3EHg7RGh3QFz8ZWJO+6jur7C2YIUq36Ng+14+AdM61Sdzpp/j9DZMBZ0KoHhj86SGq11TNnAbBC9Mc9hEzKtKEohtnZS+qYeZdR3VfvYsnth+iYXJ0Ow5r8h/47aSB8mapjROzOq5jj973KcBruxpm45lA1boMYp19E/bg=="
             ]
         ]
     }

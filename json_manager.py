@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 class InvalidCertificate(Exception):
     pass
 
+
 class JsonFile:
     def __init__(self, path):
         self.file_path = path

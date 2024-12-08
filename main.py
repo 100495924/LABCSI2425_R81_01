@@ -15,7 +15,6 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 from json_manager import JsonUserDatabase
 from json_manager import JsonKeyRing
-from test_certs import system_cert
 
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 MASTER_PWD = b"Adrian_100495924_Maria_100495839"
@@ -84,7 +83,7 @@ class BankInstance:
         print("¡Hasta la próxima!")
 
     def register(self):
-        print("\nRegistrando\n"
+        print("\nRegistrar una cuenta\n"
               "Inserta tus datos")
 
         doc_id_user = self.validate_doc_id()
@@ -272,7 +271,7 @@ class BankInstance:
         -1 si se termina el número de intentos para introducir una contraseña"""
         user_to_login = None
 
-        print("\nLogueando\n"
+        print("\nIniciar sesión\n"
               "Introduce tus datos de inicio de sesión\n"
               "(para ir atrás, presiona enter en cualquier momento)\n")
 
@@ -433,9 +432,8 @@ class BankInstance:
             print("\n¿Qué quieres hacer?\n"
                   "1_Gestionar mi dinero\n"
                   "2_Revisar mis datos\n"
-                  "3_Sacar certificado\n"
-                  "4_Eliminar cuenta\n"
-                  "5_Cerrar sesión")
+                  "3_Eliminar cuenta\n"
+                  "4_Cerrar sesión")
             user_input = input("")
 
             if user_input == "1":
@@ -447,10 +445,8 @@ class BankInstance:
                 if revisar_out == -1:
                     user_space_loop = False
             elif user_input == "3":
-                print("\nSacar certificado (futura funcionalidad)")
-            elif user_input == "4":
                 user_space_loop = self.eliminar_cuenta(user)
-            elif user_input == "5":
+            elif user_input == "4":
                 # Cerrar sesión
                 user_space_loop = False
             else:
@@ -511,7 +507,7 @@ class BankInstance:
                         credito -= dinero_a_sacar
                         self.modify_cipher_data(user, "Credito", str(credito))
                         self.firmar_operacion(user, True, dinero_a_sacar)
-                        # Verificación de firma?
+                        self.verificar_ultima_operacion(user)
                         sacar_loop = False
 
     def meter_dinero(self, user: dict, credito: int) -> None:
@@ -529,7 +525,7 @@ class BankInstance:
                     credito += dinero_a_meter
                     self.modify_cipher_data(user, "Credito", credito)
                     self.firmar_operacion(user, False, dinero_a_meter)
-                    # Verificación de firma?
+                    self.verificar_ultima_operacion(user)
                     meter_loop = False
 
     def firmar_operacion(self, user: dict, sacar: bool, dinero: int) -> None:
@@ -560,21 +556,29 @@ class BankInstance:
     def historico(self, user: dict):
         print("\nConsulta todos tus últimos movimientos:")
         for operacion in reversed(user['HistoricoFirmas']):
-            operacion_doc = operacion[0]
-            operacion_doc_bytes = operacion_doc.encode()
-            operacion_signature_bytes = base64.b64decode(operacion[1])
+            self.verificar_firma_database(operacion, True)
+
+    def verificar_ultima_operacion(self, user: dict):
+        ultima_operacion = user['HistoricoFirmas'][-1]
+        self.verificar_firma_database(ultima_operacion, False)
+
+    def verificar_firma_database(self, operacion_DB: list, print_operacion_doc: bool):
+        operacion_doc = operacion_DB[0]
+        operacion_doc_bytes = operacion_doc.encode()
+        operacion_signature_bytes = base64.b64decode(operacion_DB[1])
+        if print_operacion_doc:
             print(operacion_doc)
-            if self.verificar_firma(operacion_doc_bytes, operacion_signature_bytes) == 0:
-                print("(✓) Firma válida")
-            else:
-                print("(!) Firma inválida")
+        if self.verificar_firma(operacion_doc_bytes, operacion_signature_bytes) == 0:
+            print("(✓) Firma válida")
+        else:
+            print("(!) Firma inválida")
 
     def verificar_firma(self, doc_bytes: bytes, signature_bytes: bytes) -> int:
         (system_cert, acs_certs) = self.json_pem_keys.load_certs()
         self.json_pem_keys.verificar_cadena_certificacion(system_cert, acs_certs)
         public_key = system_cert.public_key()
         try:
-            # Verificando la firma de la transacción.
+            # Verificando la firma de la transacción
             public_key.verify(
                 signature_bytes,
                 doc_bytes,
@@ -604,7 +608,7 @@ class BankInstance:
                   f"Dirección: {user_direccion}\n"
                   f"* Credito: {user_credito}€\n"
                   "Contraseña: **********\n")
-            dato_a_modificar = input("\n¿Quieres modificar algún dato?"
+            dato_a_modificar = input("¿Quieres modificar algún dato?"
                                      "\nNOTA: Los datos marcados con '*' no se podrán modificar."
                                      "\n(para cancelar la operación, presiona enter)\n")
             if dato_a_modificar == "":
