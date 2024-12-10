@@ -78,7 +78,6 @@
 (10/12/2024 16:28:12) CIFRADO: dato 'Direccion' del usuario 00000000T con su clave AESGCM por registro
 (10/12/2024 16:28:12) CIFRADO: dato 'Credito' del usuario 00000000T con su clave AESGCM por registro
 (10/12/2024 16:28:12) CIFRADO: clave AESGCM del usuario 00000000T con clave maestra por registro
-(10/12/2024 16:28:12) Usuario 00000000T registrado, con todos sus datos cifrados y almacenados
 (10/12/2024 16:28:26) DESCIFRADO: dato 'Credito' del usuario 00000000T
 (10/12/2024 16:28:35) CIFRADO: dato 'Credito' modificado por el usuario 00000000T
 (10/12/2024 16:28:35) FIRMA: (10/12/2024 16:28:35) -10€ en la cuenta del usuario con documento de identidad 00000000T
