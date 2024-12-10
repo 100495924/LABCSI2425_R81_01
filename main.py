@@ -327,12 +327,12 @@ class BankInstance:
         if num_intentos == 0:
             return -1
 
-        # Si estamos en esta parte del código, significa que se ha iniciado sesión con éxito
-        self.rotacion_clave(user_to_login, login_pwd)
+        # Hemos llegado al final de la función y hemos iniciado la sesión con éxito
+        user_to_login = self.rotacion_clave(user_to_login, login_pwd)
 
         return user_to_login
 
-    def rotacion_clave(self, user: dict, login_pwd: str):
+    def rotacion_clave(self, user: dict, login_pwd: str) -> dict:
         """
         La clave derivada de la contraseña se obtiene con un nuevo salt
         Se genera una nueva clave de usuario con AESGCM
@@ -416,6 +416,8 @@ class BankInstance:
         }
 
         self.users_database.update_user_json(user)
+
+        return user
 
     def decrypt_data(self, user: dict, data_key: str):
         """ Función para desencriptar un dato del usuario"""

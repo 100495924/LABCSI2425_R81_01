@@ -48,3 +48,131 @@
 (08/12/2024 21:23:05) FIRMA: (08/12/2024 21:23:05) +100€ en la cuenta del usuario con documento de identidad X9875211T
 (08/12/2024 21:23:05) VERIFICACIÓN DE FIRMA (VÁLIDA): (08/12/2024 21:23:05) +100€ en la cuenta del usuario con documento de identidad X9875211T
 (08/12/2024 21:23:05) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 15:29:53) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 15:29:53) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 15:30:22) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 15:30:22) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 15:30:22) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 15:30:22) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 15:30:22) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 15:30:22) CIFRADO: dato 'Email' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 15:30:22) CIFRADO: dato 'Direccion' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 15:30:22) CIFRADO: dato 'Credito' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 15:30:22) CIFRADO: clave AESGCM del usuario X9875211T con clave maestra por rotación de clave
+(10/12/2024 15:31:48) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 16:16:10) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 16:16:10) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 16:16:10) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 16:16:10) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 16:17:20) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 16:17:20) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 16:17:20) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 16:17:20) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 16:22:55) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 16:22:55) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 16:24:01) VERIFICACIÓN DE CONTRASEÑA (INVÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 16:24:06) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 16:24:06) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 16:28:12) KDF CONTRASEÑA: registro del usuario 00000000T
+(10/12/2024 16:28:12) CIFRADO: dato 'Email' del usuario 00000000T con su clave AESGCM por registro
+(10/12/2024 16:28:12) CIFRADO: dato 'Direccion' del usuario 00000000T con su clave AESGCM por registro
+(10/12/2024 16:28:12) CIFRADO: dato 'Credito' del usuario 00000000T con su clave AESGCM por registro
+(10/12/2024 16:28:12) CIFRADO: clave AESGCM del usuario 00000000T con clave maestra por registro
+(10/12/2024 16:28:12) Usuario 00000000T registrado, con todos sus datos cifrados y almacenados
+(10/12/2024 16:28:26) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:28:35) CIFRADO: dato 'Credito' modificado por el usuario 00000000T
+(10/12/2024 16:28:35) FIRMA: (10/12/2024 16:28:35) -10€ en la cuenta del usuario con documento de identidad 00000000T
+(10/12/2024 16:28:35) VERIFICACIÓN DE FIRMA (VÁLIDA): (10/12/2024 16:28:35) -10€ en la cuenta del usuario con documento de identidad 00000000T
+(10/12/2024 16:28:35) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:29:22) CIFRADO: dato 'Credito' modificado por el usuario 00000000T
+(10/12/2024 16:29:22) FIRMA: (10/12/2024 16:29:22) +5€ en la cuenta del usuario con documento de identidad 00000000T
+(10/12/2024 16:29:22) VERIFICACIÓN DE FIRMA (VÁLIDA): (10/12/2024 16:29:22) +5€ en la cuenta del usuario con documento de identidad 00000000T
+(10/12/2024 16:29:22) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:29:25) VERIFICACIÓN DE FIRMA (VÁLIDA): (10/12/2024 16:29:22) +5€ en la cuenta del usuario con documento de identidad 00000000T
+(10/12/2024 16:29:25) VERIFICACIÓN DE FIRMA (VÁLIDA): (10/12/2024 16:28:35) -10€ en la cuenta del usuario con documento de identidad 00000000T
+(10/12/2024 16:29:25) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:29:35) DESCIFRADO: dato 'Email' del usuario 00000000T
+(10/12/2024 16:29:35) DESCIFRADO: dato 'Direccion' del usuario 00000000T
+(10/12/2024 16:29:35) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:29:51) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario 00000000T quiere iniciar sesión
+(10/12/2024 16:29:51) KDF CONTRASEÑA: rotación de clave del usuario 00000000T
+(10/12/2024 16:29:51) DESCIFRADO: dato 'Email' del usuario 00000000T
+(10/12/2024 16:29:51) DESCIFRADO: dato 'Direccion' del usuario 00000000T
+(10/12/2024 16:29:51) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:29:51) CIFRADO: dato 'Email' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:29:51) CIFRADO: dato 'Direccion' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:29:51) CIFRADO: dato 'Credito' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:29:51) CIFRADO: clave AESGCM del usuario 00000000T con clave maestra por rotación de clave
+(10/12/2024 16:30:27) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario 00000000T quiere iniciar sesión
+(10/12/2024 16:30:27) KDF CONTRASEÑA: rotación de clave del usuario 00000000T
+(10/12/2024 16:30:27) DESCIFRADO: dato 'Email' del usuario 00000000T
+(10/12/2024 16:30:27) DESCIFRADO: dato 'Direccion' del usuario 00000000T
+(10/12/2024 16:30:27) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:30:27) CIFRADO: dato 'Email' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:30:27) CIFRADO: dato 'Direccion' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:30:27) CIFRADO: dato 'Credito' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:30:27) CIFRADO: clave AESGCM del usuario 00000000T con clave maestra por rotación de clave
+(10/12/2024 16:32:46) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario 00000000T quiere iniciar sesión
+(10/12/2024 16:32:46) KDF CONTRASEÑA: rotación de clave del usuario 00000000T
+(10/12/2024 16:32:46) DESCIFRADO: dato 'Email' del usuario 00000000T
+(10/12/2024 16:32:46) DESCIFRADO: dato 'Direccion' del usuario 00000000T
+(10/12/2024 16:32:46) DESCIFRADO: dato 'Credito' del usuario 00000000T
+(10/12/2024 16:32:46) CIFRADO: dato 'Email' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:32:46) CIFRADO: dato 'Direccion' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:32:46) CIFRADO: dato 'Credito' del usuario 00000000T con su clave AESGCM por rotación de clave
+(10/12/2024 16:32:46) CIFRADO: clave AESGCM del usuario 00000000T con clave maestra por rotación de clave
+(10/12/2024 16:34:34) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 16:34:34) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 16:34:34) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 16:34:34) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 16:34:34) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 16:34:34) CIFRADO: dato 'Email' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 16:34:34) CIFRADO: dato 'Direccion' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 16:34:34) CIFRADO: dato 'Credito' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 16:34:34) CIFRADO: clave AESGCM del usuario X9875211T con clave maestra por rotación de clave
+(10/12/2024 16:34:40) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 20:25:26) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 20:25:26) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 20:25:26) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 20:25:26) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 20:25:50) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 20:25:50) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 20:25:50) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 20:25:50) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 20:26:09) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 20:26:09) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 20:26:09) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 20:26:09) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 20:26:09) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 20:26:09) CIFRADO: dato 'Email' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:09) CIFRADO: dato 'Direccion' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:09) CIFRADO: dato 'Credito' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:09) CIFRADO: clave AESGCM del usuario X9875211T con clave maestra por rotación de clave
+(10/12/2024 20:26:15) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 20:26:31) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 20:26:32) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 20:26:32) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 20:26:32) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 20:26:32) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 20:26:32) CIFRADO: dato 'Email' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:32) CIFRADO: dato 'Direccion' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:32) CIFRADO: dato 'Credito' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:32) CIFRADO: clave AESGCM del usuario X9875211T con clave maestra por rotación de clave
+(10/12/2024 20:26:46) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 20:26:46) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 20:26:46) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 20:26:46) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 20:26:46) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 20:26:46) CIFRADO: dato 'Email' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:46) CIFRADO: dato 'Direccion' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:46) CIFRADO: dato 'Credito' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:26:46) CIFRADO: clave AESGCM del usuario X9875211T con clave maestra por rotación de clave
+(10/12/2024 20:27:01) VERIFICACIÓN DE CONTRASEÑA (VÁLIDA): el usuario X9875211T quiere iniciar sesión
+(10/12/2024 20:27:01) KDF CONTRASEÑA: rotación de clave del usuario X9875211T
+(10/12/2024 20:27:01) DESCIFRADO: dato 'Email' del usuario X9875211T
+(10/12/2024 20:27:01) DESCIFRADO: dato 'Direccion' del usuario X9875211T
+(10/12/2024 20:27:01) DESCIFRADO: dato 'Credito' del usuario X9875211T
+(10/12/2024 20:27:01) CIFRADO: dato 'Email' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:27:01) CIFRADO: dato 'Direccion' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:27:01) CIFRADO: dato 'Credito' del usuario X9875211T con su clave AESGCM por rotación de clave
+(10/12/2024 20:27:01) CIFRADO: clave AESGCM del usuario X9875211T con clave maestra por rotación de clave
