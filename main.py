@@ -119,8 +119,6 @@ class BankInstance:
         # Se añade el nuevo usuario al sistema
         self.users_database.create_user_json(user)
 
-        self.log.add_log_entry(f"Usuario {user['DocID']} registrado, con todos sus datos cifrados y almacenados")
-
         print("\n** ¡Usuario registrado con éxito! **")
         print("Número de cuenta asignado:", user["BankNum"])
 
