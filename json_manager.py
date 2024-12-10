@@ -197,6 +197,8 @@ class JsonKeyRing(JsonFile):
 class LogFile(JsonFile):
     def add_log_entry(self, message: str):
         """Añade una nueva entrada al log (después de realizar algo criptográficamente relevante)"""
+        # Abrir archivo en modo "append" para añadir el texto escrito al final del archivo sin modificar el
+        # contenido anterior
         with open(self.file_path, "a", encoding="utf-8") as open_file:
             timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             open_file.write(f"({timestamp}) {message}\n")
