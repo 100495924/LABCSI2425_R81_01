@@ -623,14 +623,14 @@ class BankInstance:
                     meter_loop = False
 
     def firmar_operacion(self, user: dict, sacar: bool, dinero: int) -> None:
-        # Generar doc (message)
+        # Generar recibo a firmar
         fecha_hora_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         if sacar:
             doc = f"({fecha_hora_actual}) -{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
         else:
             doc = f"({fecha_hora_actual}) +{dinero}€ en la cuenta del usuario con documento de identidad {user['DocID']}"
         doc_bytes = doc.encode()
-        # Generar firma (signature)
+        # Generar firma
         private_key = self.json_pem_keys.load_private_key(ASSYMETRIC_KEYS_PWD)
         signature = private_key.sign(
             doc_bytes,
@@ -640,7 +640,7 @@ class BankInstance:
             ),
             hashes.SHA256()
         )
-        # Añadir a histórico de operaciones (guardar tupla doc-firma)
+        # Añadir a histórico de operaciones (guardar tupla recibo-firma)
         tuple_store = (doc, base64.b64encode(signature).decode('utf-8'))
         user['HistoricoFirmas'].append(tuple_store)
         self.users_database.update_user_json(user, ['HistoricoFirmas'])
@@ -651,20 +651,26 @@ class BankInstance:
         print(f"¡Operación realizada con éxito! Tu recibo: \n{doc}")
 
     def historico(self, user: dict):
+        # Se imprimen todos los recibos del usuario en orden de más recientes a más antiguos
+        # Se verifica la firma de cada uno de ellos
         print("\nConsulta todos tus últimos movimientos:")
         for operacion in reversed(user['HistoricoFirmas']):
             self.verificar_firma_database(operacion, True)
 
     def verificar_ultima_operacion(self, user: dict):
+        # Obtiene el recibo más reciente del usuario y verifica la firma
         ultima_operacion = user['HistoricoFirmas'][-1]
         self.verificar_firma_database(ultima_operacion, False)
 
     def verificar_firma_database(self, operacion_DB: list, print_operacion_doc: bool):
+        # operacion_DB es un par (recibo, firma) almacenado en la key 'HistoricoFirmas' del JSON del usuario
         operacion_doc = operacion_DB[0]
         operacion_doc_bytes = operacion_doc.encode()
         operacion_signature_bytes = base64.b64decode(operacion_DB[1])
+        # Se imprime el recibo
         if print_operacion_doc:
             print(operacion_doc)
+        # Se imprime el resultado de verificar la firma
         if self.verificar_firma(operacion_doc_bytes, operacion_signature_bytes) == 0:
             self.log.add_log_entry(f"VERIFICACIÓN DE FIRMA (VÁLIDA): {operacion_doc}")
             print("(✓) Firma válida")
@@ -673,11 +679,12 @@ class BankInstance:
             print("(!) Firma inválida")
 
     def verificar_firma(self, doc_bytes: bytes, signature_bytes: bytes) -> int:
+        # Para verificar una firma hace falta la clave pública del firmante, contenida en su respectivo certificado
         (system_cert, acs_certs) = self.json_pem_keys.load_certs()
         self.json_pem_keys.verificar_cadena_certificacion(system_cert, acs_certs)
         public_key = system_cert.public_key()
         try:
-            # Verificando la firma de la transacción
+            # Verificando la firma de la operación
             public_key.verify(
                 signature_bytes,
                 doc_bytes,
@@ -687,8 +694,10 @@ class BankInstance:
                 ),
                 hashes.SHA256()
             )
+        # Devuleve una excepción: es inválida
         except InvalidSignature:
             return -1
+        # No pasa nada: es válida
         else:
             return 0
 
