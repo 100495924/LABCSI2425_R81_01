@@ -12,12 +12,12 @@ class InvalidCertificate(Exception):
     pass
 
 
-class JsonFile:
+class BankFile:
     def __init__(self, path):
         self.file_path = path
 
 
-class JsonUserDatabase(JsonFile):
+class JsonUserDatabase(BankFile):
     def create_user_json(self, user_dict: dict) -> None:
         """Añade un nuevo usuario al archivo json"""
 
@@ -95,7 +95,7 @@ class JsonUserDatabase(JsonFile):
         open_file.close()
 
 
-class JsonKeyRing(JsonFile):
+class JsonKeyRing(BankFile):
     def insert_dict_json(self, dict_to_insert: dict) -> None:
         """Transforma el diccionario dado en el contenido del archivo json"""
 
@@ -194,7 +194,7 @@ class JsonKeyRing(JsonFile):
         # elegimos confiar en ella.
 
 
-class LogFile(JsonFile):
+class LogFile(BankFile):
     def add_log_entry(self, message: str):
         """Añade una nueva entrada al log (después de realizar algo criptográficamente relevante)"""
         # Abrir archivo en modo "append" para añadir el texto escrito al final del archivo sin modificar el

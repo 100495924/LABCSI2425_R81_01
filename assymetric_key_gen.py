@@ -3,7 +3,7 @@ import base64
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
-from json_manager import JsonKeyRing
+from file_manager import JsonKeyRing
 
 ################## ATENCIÓN CLAVE MAESTRA ESCRITA EN EL CÓDIGO ##################################
 ASSYMETRIC_KEYS_PWD = b"100495924_100495839"
