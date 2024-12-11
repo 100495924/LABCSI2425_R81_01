@@ -1,6 +1,2 @@
 PWD_AC_Root = Adrian_24_Maria_39
 PWD_AC_Bank = Adrian?49_Maria?49
-PWD_System_Cert = 1000Eur_B4NK_39_24 (No se usa al final xD)
-
-X9875211T
-contraseña cuenta de prueba: Patatatata_96
